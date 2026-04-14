@@ -1,16 +1,24 @@
 import streamlit as st
-import pandas as pd
 
-st.set_page_config(page_title="Админка ККТ", layout="wide")
+st.set_page_config(page_title="Аналитика ККТ", layout="wide")
 
-st.title("📊 Система учета ФН и ККТ")
+st.title("📊 Мониторинг отгрузок ФН")
 
-# Тестовая панель
-st.write("Привет, Дима! Твой сайт теперь работает из облака.")
-
+# Блок с ключевыми показателями
 col1, col2, col3 = st.columns(3)
-col1.metric("Отгружено сегодня", "12 шт", "+2")
-col2.metric("В пути", "45 шт")
-col3.metric("Зарегистрировано", "85%", "5%")
+with col1:
+    st.metric("Отгружено (шт)", "150", "+5")
+with col2:
+    st.metric("Регистраций", "124", "82%")
+with col3:
+    st.metric("Остаток на складе", "26")
 
-st.info("Следующим шагом мы подключим сюда твою Google Таблицу!")
+st.divider()
+
+# Заглушка для будущей таблицы
+st.subheader("📋 Последние отгрузки организациям")
+st.info("Здесь будет список из твоей Google Таблицы")
+
+# Кнопка для проверки
+if st.button("Обновить данные"):
+    st.toast("Подключаюсь к Google Таблице...")
