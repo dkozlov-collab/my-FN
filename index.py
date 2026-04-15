@@ -1,46 +1,83 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Мониторинг Складов", layout="wide")
+st.set_page_config(page_title="Учет ККТ: Склады СП", layout="wide", page_icon="🏢")
 
-# Твой ID таблицы
-ID = "1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg"
-URL = f"https://docs.google.com/spreadsheets/d/{ID}/gviz/tq?tqx=out:csv"
+# Твоя ссылка
+URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
-st.sidebar.title("🔐 Авторизация")
-pwd = st.sidebar.text_input("Пароль", type="password")
+# --- ЛОГИКА ВХОДА ---
+st.sidebar.title("🔐 Личный кабинет")
+pwd = st.sidebar.text_input("Введите ваш код", type="password")
 
 if pwd == "777":
     try:
-        # Читаем данные через Google Visualization API (самый мощный способ)
         df = pd.read_csv(URL)
-        
-        # Убираем пустые столбцы, если они есть
+        # Чистим данные от пустых колонок
         df = df.dropna(axis=1, how='all')
-
-        st.title("👑 Админ-панель: Учет ККТ")
         
-        # Статистика сверху
-        col1, col2 = st.columns(2)
-        if 'Остатки ККТ' in df.columns:
-            col1.metric("Всего ККТ", int(df['Остатки ККТ'].sum()))
-        if 'Склад' in df.columns:
-            col2.metric("Кол-во Складов", df['Склад'].nunique())
+        st.title("👑 Панель управления Складами")
+        
+        # --- ФИЛЬТРЫ В БОКОВОЙ ПАНЕЛИ ---
+        st.sidebar.divider()
+        st.sidebar.subheader("⚙️ Фильтрация")
+        
+        all_partners = ["Все"] + sorted(df['Сервис Партнер'].dropna().unique().tolist())
+        selected_partner = st.sidebar.selectbox("Партнер:", all_partners)
+        
+        all_cities = ["Все города"] + sorted(df['Склад'].dropna().unique().tolist())
+        selected_city = st.sidebar.selectbox("Город/Склад:", all_cities)
 
-        st.divider()
+        # Применяем фильтры
+        filtered_df = df.copy()
+        if selected_partner != "Все":
+            filtered_df = filtered_df[filtered_df['Сервис Партнер'] == selected_partner]
+        if selected_city != "Все города":
+            filtered_df = filtered_df[filtered_df['Склад'] == selected_city]
 
-        # График
-        if 'Склад' in df.columns and 'Остатки ККТ' in df.columns:
-            st.subheader("📊 Остатки по городам")
-            st.bar_chart(df.set_index('Склад')['Остатки ККТ'])
+        # --- ВКЛАДКИ ---
+        tab1, tab2, tab3 = st.tabs(["📊 Аналитика", "📦 Остатки ККТ", "📋 Весь отчет"])
 
-        # Сама таблица
-        st.subheader("📋 Детальный отчет")
-        st.dataframe(df, use_container_width=True)
+        with tab1:
+            st.subheader(f"Статистика: {selected_partner} / {selected_city}")
+            c1, c2, c3 = st.columns(3)
+            
+            total = int(filtered_df['Остатки ККТ'].sum())
+            c1.metric("Всего ККТ", f"{total} шт")
+            c2.metric("Складов", filtered_df['Склад'].nunique())
+            
+            # Считаем дефицит (где остатки < мин)
+            if 'Мин. остаток' in filtered_df.columns:
+                deficiency = filtered_df[filtered_df['Остатки ККТ'] < filtered_df['Мин. остаток']].shape[0]
+                c3.metric("Критические остатки", f"{deficiency} складов", delta="-внимание", delta_color="inverse")
+
+            st.divider()
+            st.write("📈 Распределение оборудования по складам")
+            # Группируем для красоты графика
+            chart_data = filtered_df.groupby('Склад')['Остатки ККТ'].sum().sort_values(ascending=False)
+            st.bar_chart(chart_data)
+
+        with tab2:
+            st.subheader("📦 Проверка запасов")
+            # Показываем только важные для остатков колонки
+            stock_cols = ['Склад', 'Тип рег', 'Остатки ККТ', 'Мин. остаток', 'Сервис Партнер']
+            st.dataframe(filtered_df[stock_cols], use_container_width=True)
+            
+            # Кнопка быстрой выгрузки остатков
+            csv_stock = filtered_df[stock_cols].to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 Скачать список остатков", csv_stock, "ostakti.csv")
+
+        with tab3:
+            st.subheader("📝 Полная база данных")
+            st.dataframe(filtered_df, use_container_width=True)
+            
+            csv_full = filtered_df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 Скачать полный отчет (CSV)", csv_full, "full_report.csv")
 
     except Exception as e:
-        st.error(f"Ошибка доступа. Google всё еще блокирует запрос.")
-        st.info("Дима, проверь: Файл -> Поделиться -> Опубликовать в интернете -> Опубликовать.")
+        st.error(f"Ошибка чтения таблицы. Проверь доступ. ({e})")
 else:
-    st.title("🛡️ Система мониторинга")
-    st.write("Введите код доступа в боковом меню.")
+    # Главный экран до входа
+    st.title("🏢 Система мониторинга ККТ")
+    st.info("Пожалуйста, введите ваш секретный код в левом меню для входа в кабинет.")
+    st.image("https://img.freepik.com/free-vector/data-report-concept-illustration_114360-883.jpg", width=400)
