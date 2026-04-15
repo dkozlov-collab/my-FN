@@ -132,3 +132,53 @@ with t4:
     if st.button("Сбросить кэш данных"):
         st.cache_data.clear()
         st.rerun()
+for c in list(cols_map.keys())[1:]:
+        df_calc[c] = df_calc[c].apply(to_n)
+        
+    summary = df_calc.groupby(df_s.columns[1])[list(cols_map.keys())[1:]].sum().reset_index()
+    summary.rename(columns=cols_map, inplace=True)
+    
+    # Считаем итоги для строки ИТОГО
+    itogo = summary.sum(numeric_only=True).to_frame().T
+    itogo["ПАРТНЕР"] = "ИТОГО"
+    summary = pd.concat([summary, itogo], ignore_index=True)
+    
+    # Карточки с главными цифрами
+    m1, m2, m3 = st.columns(3)
+    m1.metric("ККТ ВСЕГО", f"{int(itogo['ККТ'].iloc[0])} шт")
+    m2.metric("ФН (ВСЕ МОДЕЛИ)", f"{int(itogo['ФН-15'].iloc[0] + itogo['ФН-36'].iloc[0])} шт")
+    m3.metric("SIM-КАРТЫ", f"{int(itogo['SIM'].iloc[0])} шт")
+    
+    st.divider()
+    # Таблица аналитики (можно сортировать по любому столбцу)
+    st.data_editor(summary, use_container_width=True, hide_index=True)
+
+with t2:
+    st.write("### 🔍 Склад с фильтрацией")
+    # Глобальный поиск по всем 80 столбцам
+    search_s = st.text_input("🔍 Быстрый поиск по складу (введите город, модель или серийник):")
+    df_show_s = df_s.copy()
+    if search_s:
+        df_show_s = df_show_s[df_show_s.apply(lambda r: r.astype(str).str.contains(search_s, case=False).any(), axis=1)]
+    
+    # Редактор позволяет сортировать и искать по столбцам
+    st.data_editor(df_show_s, use_container_width=True, height=600, hide_index=True)
+
+with t3:
+    st.write("### 🚚 Логистика (5000 строк)")
+    search_l = st.text_input("🔍 Поиск по логистике (ТТН, Партнер):")
+    df_show_l = df_l.copy()
+    if search_l:
+        df_show_l = df_show_l[df_show_l.apply(lambda r: r.astype(str).str.contains(search_l, case=False).any(), axis=1)]
+    
+    st.data_editor(df_show_l, use_container_width=True, height=600, hide_index=True)
+
+with t4:
+    st.write("### ⚙️ Управление")
+    if st.button("Обновить данные из таблиц (Сбросить кэш)"):
+        st.cache_data.clear()
+        st.rerun()
+    
+    if st.sidebar.button("ВЫЙТИ ИЗ СИСТЕМЫ"):
+        st.session_state.auth = False
+        st.rerun()
