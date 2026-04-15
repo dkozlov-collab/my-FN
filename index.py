@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.express as px
 import re
 
-# --- УЛЬТИМАТИВНЫЙ ДИЗАЙН NEON ---
-st.set_page_config(layout="wide", page_title="RBS NEON SYSTEM 2026")
+# --- НАСТРОЙКИ СТИЛЯ (NEON DARK) ---
+st.set_page_config(layout="wide", page_title="RBS NEON SYSTEM")
 
 st.markdown("""
 <style>
@@ -17,19 +17,25 @@ st.markdown("""
         border-radius: 8px 8px 0 0; border: 1px solid #00f2fe; color: white; padding: 10px 20px;
     }
     .stTabs [aria-selected="true"] { background-color: #00f2fe !important; color: #050c1a !important; font-weight: bold; }
-    h1 { text-align: center; text-shadow: 0 0 20px #00f2fe; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { text-align: center; text-shadow: 0 0 20px #00f2fe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- ЗАГРУЗКА ---
-U_S = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
-U_L = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
-
+# --- ФУНКЦИИ ОБРАБОТКИ (БЕЗОПАСНЫЕ) ---
 def to_n(v):
     try:
+        # Вытаскиваем только цифры, чтобы не было ошибок TypeError
         n = re.findall(r'\d+', str(v).replace(' ',''))
         return float(n[0]) if n else 0.0
     except: return 0.0
+
+def fmt(num):
+    # Безопасное форматирование числа с пробелом (решает твою ошибку ValueError)
+    return "{:,.0f}".format(num).replace(",", " ")
+
+# --- ЗАГРУЗКА ДАННЫХ ---
+U_S = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
+U_L = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
 @st.cache_data(ttl=5)
 def load_all():
@@ -41,29 +47,30 @@ def load_all():
 
 df_s_raw, df_l_raw = load_all()
 
-# --- САЙДБАР (ВЕРИФИКАЦИЯ ПАРТНЕРОВ) ---
+# --- САЙДБАР (ГЛОБАЛЬНАЯ ВЕРИФИКАЦИЯ) ---
 st.sidebar.title("💎 RBS COMMAND")
-st.sidebar.subheader("Глобальный фильтр")
 partners = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
-sel_p = st.sidebar.multiselect("Выберите партнеров:", [p for p in partners if p != "0.0" and p != ""])
+sel_p = st.sidebar.multiselect("Верификация партнеров:", [p for p in partners if p not in ["0.0", "", "0"]])
 
 df_s = df_s_raw[df_s_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_s_raw
 df_l = df_l_raw[df_l_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_l_raw
 
-# --- ВКЛАДКИ (ФУНКЦИОНАЛ) ---
-t1, t2, t3, t4 = st.tabs(["📊 ДАШБОРД", "📦 СКЛАД", "🚚 ЛОГИСТИКА", "📈 АНАЛИТИКА"])
+# --- ВКЛАДКИ ---
+t1, t2, t3, t4 = st.tabs(["📊 ОБЩИЙ ДАШБОРД", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА 2026", "📈 ГРАФИКИ И АНАЛИЗ"])
 
 with t1:
     st.markdown("<h1>💎 ГЛОБАЛЬНЫЙ МОНИТОРИНГ</h1>", unsafe_allow_html=True)
+    
+    # Расчеты
     kkt = df_s.iloc[:, 5].apply(to_n).sum()
     fn = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
     money = df_l.iloc[:, 11].apply(to_n).sum()
     
     c1, c2, c3 = st.columns(3)
-    c1.metric("КАССЫ (ШТ)", f"{int(kkt)}")
-    c2.metric("ФН (ШТ)", f"{int(fn)}")
-    # Исправленная безопасная строка для денег:
-    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{money:,.0f} ₽".replace(',', ' '))
+    c1.metric("КАССЫ В НАЛИЧИИ", f"{int(kkt)} шт")
+    c2.metric("ФН ОСТАТОК", f"{int(fn)} шт")
+    # Используем безопасную функцию fmt()
+    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt(money)} ₽")
     
     st.divider()
     col_a, col_b = st.columns(2)
@@ -77,19 +84,23 @@ with t1:
         st.plotly_chart(fig2, use_container_width=True)
 
 with t2:
-    st.write("### 📦 Реестр склада (80 столбцов)")
+    st.write("### 📦 Полный реестр склада (80 столбцов)")
     st.dataframe(df_s, use_container_width=True, height=600)
-
-with t3:
+    with t3:
     st.write("### 🚚 Логистика и посылки")
-    search = st.text_input("🔍 Поиск по номеру/получателю:")
+    search = st.text_input("🔍 Быстрый поиск:")
     if search:
         df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     st.dataframe(df_l, use_container_width=True, height=600)
-    with t4:
-    st.write("### 📈 Анализ по городам")
-    # Динамический график: берем топ-10 городов по кассам
-    df_city = df_s.groupby(df_s.columns[2])[df_s.columns[5]].apply(lambda x: x.apply(to_n).sum()).reset_index()
-    fig_city = px.bar(df_city, x=df_s.columns[2], y=df_s.columns[5], title="Запасы ККТ по регионам", color_discrete_sequence=['#00f2fe'])
-    fig_city.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-    st.plotly_chart(fig_city, use_container_width=True)
+
+with t4:
+    st.write("### 📈 Аналитика по регионам")
+    if not df_s.empty:
+        # Группировка по городу (столбец 2) и кассам (столбец 5)
+        df_city = df_s.copy()
+        df_city['KKT_VAL'] = df_city.iloc[:, 5].apply(to_n)
+        city_summary = df_city.groupby(df_city.columns[2])['KKT_VAL'].sum().reset_index()
+        
+        fig_bar = px.bar(city_summary, x=city_summary.columns[0], y='KKT_VAL', title="Запасы ККТ по городам", color_discrete_sequence=['#00f2fe'])
+        fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.plotly_chart(fig_bar, use_container_width=True)
