@@ -91,7 +91,7 @@ with t3:
     if search:
         df_l_f = df_l_f[df_l_f.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     st.dataframe(df_l_f, use_container_width=True, height=600)
-    with t4:
+with t4:
     st.write("### 📈 Аналитика по регионам")
     if not df_s.empty:
         df_city = df_s.copy()
