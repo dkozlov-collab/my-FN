@@ -130,4 +130,77 @@ with t3:
 if st.sidebar.button("ВЫЙТИ"):
     st.session_state.auth = False
     st.rerun()
+    # --- ПРОДОЛЖЕНИЕ КОДА (Добавляем к существующему разделу t1 - Аналитика) ---
+
+with t1:
+    st.divider()
+    st.write("### 🔍 ГЛУБОКАЯ ЦИФРОВАЯ ПРОВЕРКА")
+    
+    # 1. Расчет по городам (Москва, Питер и остальные)
+    # Создаем выборку: Город (столбец 2) и ККТ (столбец 5)
+    df_city_sum = df_calc.groupby(df_s.columns[2])[list(cols.keys())[3:]].sum().reset_index()
+    df_city_sum.rename(columns={df_s.columns[2]: "Город/Склад"}, inplace=True)
+    
+    st.write("#### Остатки в разрезе городов:")
+    st.data_editor(df_city_sum, use_container_width=True, hide_index=True)
+
+    # 2. Блок прогнозирования (Расход и запас)
+    st.divider()
+    st.write("### ⏳ ПРОГНОЗ И РАСХОД")
+    
+    # Предположим, 10-й столбец — это расход за месяц
+    df_calc['Monthly_Usage'] = df_s.iloc[:, 10].apply(to_n)
+    total_usage = df_calc['Monthly_Usage'].sum()
+    
+    # Считаем на сколько дней хватит остатка (Inventory Days)
+    days_left = (kkt_total / (total_usage / 30)) if total_usage > 0 else 0
+    
+    c_usage, c_days, c_status = st.columns(3)
+    c_usage.metric("СРЕДНИЙ РАСХОД (МЕС)", f"{int(total_usage)} шт")
+    c_days.metric("ЗАПАС ХВАТИТ НА", f"{int(days_left)} дней")
+    
+    if days_left < 10:
+        c_status.error("🔴 КРИТИЧЕСКИЙ ЗАПАС")
+    elif days_left < 30:
+        c_status.warning("🟡 ТРЕБУЕТСЯ ПОПОЛНЕНИЕ")
+    else:
+        c_status.success("🟢 ЗАПАС В НОРМЕ")
+
+# --- ПРОДОЛЖЕНИЕ РАЗДЕЛА t3 (ЛОГИСТИКА) ---
+with t3:
+    st.divider()
+    st.write("### 🛠 ИНСТРУМЕНТЫ ПРОВЕРКИ ТТН")
+    
+    # Добавляем фильтр по статусу доставки (предположим, 12-й столбец - статус)
+    if not df_l.empty:
+        status_col = df_l.columns[12]
+        all_statuses = df_l[status_col].unique()
+        sel_status = st.multiselect("Фильтр по статусу доставки:", all_statuses)
+        
+        if sel_status:
+            df_l_filtered = df_l[df_l[status_col].isin(sel_status)]
+            st.write(f"Найдено отправлений: {len(df_l_filtered)}")
+            # Выводим только важные колонки для быстрой проверки
+            st.dataframe(df_l_filtered.iloc[:, [1, 3, 11, 12]], use_container_width=True)
+
+# --- НОВАЯ ВКЛАДКА t4 (СЕРВИС И ТЕХПОДДЕРЖКА) ---
+# Добавляем еще одну вкладку в список tabs
+# t1, t2, t3, t4 = st.tabs(["🔢 АНАЛИТИКА", "📦 СКЛАД", "🚚 ЛОГИСТИКА", "🛠 СЕРВИС"])
+
+with t4:
+    st.write("### 🛠 Техническое обслуживание и ФН")
+    
+    # Считаем сколько ФН скоро закончатся (если есть даты в столбце 15)
+    # Это пример "ручного" расширения функционала
+    st.info("В разработке: Здесь будут выводиться серийные номера ККТ, у которых срок ФН подходит к концу.")
+    
+    # Кнопка выгрузки текущего отчета
+    st.divider()
+    csv = df_s.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 СКАЧАТЬ ОТЧЕТ В EXCEL (CSV)",
+        data=csv,
+        file_name='rbs_report.csv',
+        mime='text/csv',
+    )
     
