@@ -3,96 +3,80 @@ import pandas as pd
 import plotly.express as px
 import re
 
-# --- ДИЗАЙН NEON ---
-st.set_page_config(layout="wide", page_title="RBS NEON SYSTEM")
+# --- 1. НАСТРОЙКА ВИДА ---
+st.set_page_config(layout="wide", page_title="RBS NEON 2026")
 
+# Ручной CSS для темной темы
 st.markdown("""
 <style>
-    .stApp { background: radial-gradient(circle at center, #050c1a, #0a1e3c); color: #e0e6ed; }
-    [data-testid="stMetricValue"] { color: #00f2fe !important; font-size: 32px !important; font-weight: 800; text-shadow: 0 0 10px #00f2fe; }
-    [data-testid="metric-container"] { background: rgba(16, 32, 64, 0.4); border: 1px solid #00f2fe; border-radius: 15px; padding: 15px; }
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] { 
-        height: 45px; background-color: rgba(16, 32, 64, 0.6); 
-        border-radius: 8px 8px 0 0; border: 1px solid #00f2fe; color: white; padding: 10px 20px;
-    }
-    .stTabs [aria-selected="true"] { background-color: #00f2fe !important; color: #050c1a !important; font-weight: bold; }
-    h1 { text-align: center; text-shadow: 0 0 20px #00f2fe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
+    .stApp { background-color: #050c1a; color: #e0e6ed; }
+    [data-testid="stMetricValue"] { color: #00f2fe !important; font-size: 32px !important; font-weight: bold; }
+    [data-testid="metric-container"] { background: #0a1e3c; border: 1px solid #00f2fe; border-radius: 10px; padding: 10px; }
+    h1 { text-align: center; color: #00f2fe; text-transform: uppercase; }
+    .stTabs [data-baseweb="tab"] { color: white; border: 1px solid #00f2fe; border-radius: 5px; margin: 2px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- УМНАЯ ОЧИСТКА ---
-def to_n(v):
-    try:
-        n = re.findall(r'\d+', str(v).replace(' ',''))
-        return float(n[0]) if n else 0.0
-    except: return 0.0
+# --- 2. ССЫЛКИ НА ТАБЛИЦЫ ---
+S_URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
+L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
-# --- ЗАГРУЗКА ---
-U_S = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
-U_L = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
-
+# --- 3. ЗАГРУЗКА (РУЧНАЯ) ---
 @st.cache_data(ttl=5)
-def load_all():
-    try:
-        s = pd.read_csv(U_S).iloc[:500, 0:80].fillna("")
-        l = pd.read_csv(U_L).iloc[:1000, 0:80].fillna("")
-        return s, l
-    except: return pd.DataFrame(), pd.DataFrame()
+def get_data():
+    # Склад: берем первые 80 столбцов
+    s = pd.read_csv(S_URL).iloc[:500, 0:80].fillna("")
+    # Логистика: берем до 1000 строк
+    l = pd.read_csv(L_URL).iloc[:1000, 0:80].fillna("")
+    return s, l
 
-df_s_raw, df_l_raw = load_all()
+df_s_raw, df_l_raw = get_data()
 
-# --- САЙДБАР ---
-st.sidebar.title("💎 RBS COMMAND")
-p_all = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
-sel_p = st.sidebar.multiselect("Выберите партнеров:", [x for x in p_all if x not in ["0.0", "", "0"]])
+# --- 4. ФИЛЬТРАЦИЯ (РУЧНАЯ) ---
+st.sidebar.title("💎 RBS ФИЛЬТР")
+p_list = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
+sel_p = st.sidebar.multiselect("Выберите партнера:", [x for x in p_list if x not in ["", "0", "0.0"]])
 
+# Применяем фильтр вручную
 df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_s_raw
 df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_l_raw
 
-# --- ВКЛАДКИ ---
-t1, t2, t3, t4 = st.tabs(["📊 ДАШБОРД", "📦 СКЛАД", "🚚 ЛОГИСТИКА", "📈 АНАЛИТИКА"])
+# --- 5. ВКЛАДКИ ---
+t1, t2, t3 = st.tabs(["📊 ГЛАВНАЯ", "📦 СКЛАД", "🚚 ЛОГИСТИКА"])
 
 with t1:
-    st.markdown("<h1>💎 ГЛОБАЛЬНЫЙ МОНИТОРИНГ</h1>", unsafe_allow_html=True)
-    kkt = df_s.iloc[:, 5].apply(to_n).sum()
-    fn = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
-    money = df_l.iloc[:, 11].apply(to_n).sum()
+    st.markdown("<h1>RBS GLOBAL MONITOR</h1>", unsafe_allow_html=True)
     
+    # Ручной расчет сумм
+    def parse_n(val):
+        nums = re.findall(r'\d+', str(val).replace(' ', ''))
+        return float(nums[0]) if nums else 0.0
+
+    kkt = df_s.iloc[:, 5].apply(parse_n).sum()
+    fn = df_s.iloc[:, 6].apply(parse_n).sum() + df_s.iloc[:, 7].apply(parse_n).sum()
+    money = df_l.iloc[:, 11].apply(parse_n).sum()
+
+    # Вывод карточек
     c1, c2, c3 = st.columns(3)
-    c1.metric("КАССЫ (ШТ)", f"{int(kkt)}")
-    c2.metric("ФН (ШТ)", f"{int(fn)}")
-    
-    # ИСПРАВЛЕННАЯ СТРОКА (БЕЗОПАСНАЯ)
-    val_str = "{:,.0f}".format(money).replace(",", " ")
-    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{val_str} ₽")
-    
-    st.divider()
-    col_a, col_b = st.columns(2)
-    with col_a:
-        fig1 = px.pie(df_s, values=df_s.columns[5], names=df_s.columns[1], hole=0.6, title="Доли ККТ")
-        fig1.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=False)
-        st.plotly_chart(fig1, use_container_width=True)
-    with col_b:
-        fig2 = px.pie(df_l, values=df_l.iloc[:, 11].apply(to_n), names=df_l.columns[1], hole=0.6, title="Доли ₽")
-        fig2.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
+    c1.metric("КАССЫ", f"{int(kkt)} шт")
+    c2.metric("ФН", f"{int(fn)} шт")
+    # Форматируем вручную, чтобы не было ValueError
+    m_str = f"{int(money):,}".replace(",", " ")
+    c3.metric("ДЕНЬГИ", f"{m_str} ₽")
+
+    # Простой график
+    if kkt > 0:
+        fig = px.pie(df_s, values=df_s.columns[5], names=df_s.columns[1], hole=0.5, title="Доли ККТ")
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.plotly_chart(fig, use_container_width=True)
 
 with t2:
-    st.dataframe(df_s, use_container_width=True, height=600)
+    st.write("### 📋 Таблица Склада (80 столбцов)")
+    st.dataframe(df_s, use_container_width=True)
 
 with t3:
-    search = st.text_input("🔍 Поиск:")
-    df_l_f = df_l.copy()
-    if search:
-        df_l_f = df_l_f[df_l_f.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-    st.dataframe(df_l_f, use_container_width=True, height=600)
-
-with t4:
-    if not df_s.empty:
-        df_city = df_s.copy()
-        df_city['KKT_V'] = df_city.iloc[:, 5].apply(to_n)
-        city_sum = df_city.groupby(df_city.columns[2])['KKT_V'].sum().reset_index()
-        fig_bar = px.bar(city_sum, x=city_sum.columns[0], y='KKT_V', title="По городам", color_discrete_sequence=['#00f2fe'])
-        fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-        st.plotly_chart(fig_bar, use_container_width=True)
+    st.write("### 🚚 Таблица Логистики")
+    find = st.text_input("Поиск по номеру:")
+    if find:
+        df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(find, case=False).any(), axis=1)]
+    st.dataframe(df_l, use_container_width=True)
