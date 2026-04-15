@@ -101,3 +101,6 @@ if not df_raw.empty:
     # --- ТАБЛИЦА ---
     st.write("### 📋 Полный реестр (A:R)")
     st.dataframe(df, use_container_width=True, hide_index=True)
+    else:
+    st.error("Система не видит данные по этой ссылке. Дима, проверь настройки доступа в самой таблице (Доступ ограничен -> Все, у кого есть ссылка)!")
+    
