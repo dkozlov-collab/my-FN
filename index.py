@@ -21,16 +21,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- ФУНКЦИИ ОЧИСТКИ ДАННЫХ ---
+# --- БЕЗОПАСНЫЕ ФУНКЦИИ ---
 def to_n(v):
     try:
-        # Умная очистка: вытаскиваем цифры, чтобы буквы не ломали расчеты
+        # Вытаскиваем только цифры (решает проблему текста в ячейках)
         n = re.findall(r'\d+', str(v).replace(' ',''))
         return float(n[0]) if n else 0.0
     except: return 0.0
 
 def fmt_money(num):
-    # Безопасное форматирование суммы (решает ошибку ValueError)
+    # Безопасное форматирование числа (решает ошибку ValueError)
     return "{:,.0f}".format(num).replace(",", " ")
 
 # --- ЗАГРУЗКА ДАННЫХ ---
@@ -49,14 +49,13 @@ df_s_raw, df_l_raw = load_all()
 
 # --- САЙДБАР (ВЕРИФИКАЦИЯ) ---
 st.sidebar.title("💎 RBS COMMAND")
-# Сбор партнеров из обоих файлов для фильтра
 p_all = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
 sel_p = st.sidebar.multiselect("Выберите партнеров:", [x for x in p_all if x not in ["0.0", "", "0"]])
 
 df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_s_raw
 df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_l_raw
 
-# --- ВКЛАДКИ (ФУНКЦИОНАЛ) ---
+# --- ВКЛАДКИ ---
 t1, t2, t3, t4 = st.tabs(["📊 ДАШБОРД", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА", "📈 АНАЛИТИКА"])
 
 with t1:
@@ -68,8 +67,8 @@ with t1:
     c1, c2, c3 = st.columns(3)
     c1.metric("КАССЫ В НАЛИЧИИ", f"{int(kkt)} шт")
     c2.metric("ФН ОСТАТОК", f"{int(fn)} шт")
-    # Используем безопасную функцию fmt_money для вывода
     c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt_money(money)} ₽")
+    
     st.divider()
     col_a, col_b = st.columns(2)
     with col_a:
@@ -84,15 +83,15 @@ with t1:
 with t2:
     st.write("### 📦 Полный реестр склада (80 столбцов)")
     st.dataframe(df_s, use_container_width=True, height=600)
+
 with t3:
     st.write("### 🚚 Логистика и посылки")
-    search = st.text_input("🔍 Быстрый поиск по логистике:")
+    search = st.text_input("🔍 Быстрый поиск:")
     df_l_f = df_l.copy()
     if search:
         df_l_f = df_l_f[df_l_f.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     st.dataframe(df_l_f, use_container_width=True, height=600)
-
-with t4:
+    with t4:
     st.write("### 📈 Аналитика по регионам")
     if not df_s.empty:
         df_city = df_s.copy()
