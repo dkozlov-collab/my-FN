@@ -85,7 +85,7 @@ with t1:
 with t2:
     st.write("### 📦 Полный реестр склада (80 столбцов)")
     st.dataframe(df_s, use_container_width=True, height=600)
-    with t3:
+with t3:
     st.write("### 🚚 Логистика и посылки")
     search = st.text_input("🔍 Быстрый поиск по логистике:")
     df_l_f = df_l.copy()
