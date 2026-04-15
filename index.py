@@ -3,27 +3,28 @@ import pandas as pd
 import plotly.express as px
 import re
 
-# Настройка под Pocophone
-st.set_page_config(page_title="RBS: Глобальный Мониторинг", layout="wide")
+# Настройка экрана под Pocophone
+st.set_page_config(page_title="RBS: Глобальный Контроль", layout="wide")
 
+# Стиль и цветовая индикация тревог
 st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; }
-    [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 32px; font-weight: bold; }
-    h1 { color: #1A237E !important; text-align: center; border-bottom: 3px solid #007BFF; padding-bottom: 10px; }
-    .stDataFrame { border: 1px solid #DEE2E6; border-radius: 10px; }
+    [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 28px; font-weight: bold; }
+    .alarm-low { background-color: #FFEBEE; padding: 10px; border-radius: 10px; border-left: 5px solid #FF5252; color: #B71C1C; margin-bottom: 10px; }
+    .alarm-ok { background-color: #E8F5E9; padding: 10px; border-radius: 10px; border-left: 5px solid #4CAF50; color: #1B5E20; margin-bottom: 10px; }
+    h1 { color: #1A237E !important; text-align: center; border-bottom: 2px solid #007BFF; }
 </style>
 """, unsafe_allow_html=True)
 
-# ССЫЛКИ
+# ССЫЛКИ (A:CB до 80 столбца)
 URL_SKLAD = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 URL_LOGISTIC = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
-# --- ФУНКЦИЯ-ОЧИСТИТЕЛЬ (решает проблему TypeError и 0 руб) ---
-def clean_money(val):
+def clean_num(val):
     try:
         if pd.isna(val) or val == "" or val == 0: return 0.0
-        # Оставляем только ПЕРВОЕ число, которое находим в строке
+        # Находим ПЕРВОЕ число в строке (игнорируем текст "загрузила", "шт" и т.д.)
         nums = re.findall(r'\d+', str(val).replace(' ', ''))
         return float(nums[0]) if nums else 0.0
     except: return 0.0
@@ -31,69 +32,78 @@ def clean_money(val):
 @st.cache_data(ttl=5)
 def load_data():
     try:
-        # Склад (80 столбцов)
-        df_s = pd.read_csv(URL_SKLAD).iloc[:100, 0:80].fillna("")
-        # Логистика 2026
-        df_l = pd.read_csv(URL_LOGISTIC).fillna("")
-        return df_s, df_l
+        s = pd.read_csv(URL_SKLAD).iloc[:100, 0:80].fillna("")
+        l = pd.read_csv(URL_LOGISTIC).iloc[:100, 0:80].fillna("")
+        return s, l
     except: return pd.DataFrame(), pd.DataFrame()
 
-df_s, df_l_raw = load_data()
+df_s, df_l = load_data()
 
 # --- МЕНЮ ---
-st.sidebar.title("💎 RBS SYSTEM")
-page = st.sidebar.radio("РАЗДЕЛ:", ["📦 СКЛАД И ОСТАТКИ", "🚚 ЛОГИСТИКА 2026"])
+st.sidebar.title("💎 RBS COMMAND")
+mode = st.sidebar.radio("РАЗДЕЛ:", ["📦 СКЛАД И ОСТАТКИ", "🚚 ЛОГИСТИКА 2026"])
 
-if page == "📦 СКЛАД И ОСТАТКИ":
-    st.markdown("<h1>📦 ПОЛНЫЙ РЕЕСТР СКЛАДА</h1>", unsafe_allow_html=True)
-    if not df_s.empty:
-        # Фильтры
-        st.sidebar.subheader("🔍 Фильтрация")
-        p_list = ["Все"] + sorted(df_s.iloc[:, 1].unique().astype(str).tolist())
-        sel_p = st.sidebar.selectbox("Партнер:", p_list)
-        
-        df_f = df_s.copy()
-        if sel_p != "Все":
-            df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_p]
+if mode == "📦 СКЛАД И ОСТАТКИ":
+    st.markdown("<h1>📦 СКЛАД: ФИЛЬТРАЦИЯ И ТРЕВОГИ</h1>", unsafe_allow_html=True)
+    
+    # ФИЛЬТРЫ СКЛАДА
+    st.sidebar.subheader("🔍 Фильтры")
+    p_col = df_s.columns[1] # Партнер
+    c_col = df_s.columns[2] # Город
+    
+    sel_p = st.sidebar.multiselect("Партнеры:", sorted(df_s[p_col].unique().astype(str)))
+    sel_c = st.sidebar.multiselect("Города:", sorted(df_s[c_col].unique().astype(str)))
 
-        # Метрики (Кассы - ст. 6, ФН - ст. 7 и 8)
-        kkt = df_f.iloc[:, 5].apply(clean_money).sum()
-        fn = df_f.iloc[:, 6].apply(clean_money).sum() + df_f.iloc[:, 7].apply(clean_money).sum()
+    df_f = df_s.copy()
+    if sel_p: df_f = df_f[df_f[p_col].astype(str).isin(sel_p)]
+    if sel_c: df_f = df_f[df_f[c_col].astype(str).isin(sel_c)]
 
-        c1, c2 = st.columns(2)
-        c1.metric("КАССЫ (ШТ)", f"{int(kkt)}")
-        c2.metric("ФН (ШТ)", f"{int(fn)}")
+    # ТРЕВОГИ (Alerts)
+    kkt = df_f.iloc[:, 5].apply(clean_num).sum()
+    fn_total = df_f.iloc[:, 6].apply(clean_num).sum() + df_f.iloc[:, 7].apply(clean_num).sum()
 
-        st.dataframe(df_f, use_container_width=True)
+    st.subheader("🚨 Состояние запасов:")
+    if kkt < 5:
+        st.markdown(f"<div class='alarm-low'>⚠️ КРИТИЧЕСКИЙ ОСТАТОК ККТ: {int(kkt)} шт! Срочно пополни склад.</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='alarm-ok'>✅ ККТ в норме: {int(kkt)} шт.</div>", unsafe_allow_html=True)
+    
+    if fn_total < 10:
+        st.markdown(f"<div class='alarm-low'>⚠️ МАЛО ФН: Всего {int(fn_total)} шт на выбранных точках!</div>", unsafe_allow_html=True)
 
-        # График-бублик
-        if kkt > 0:
-            fig = px.pie(df_f, values=df_f.columns[5], names=df_f.columns[2], 
-                         hole=0.5, title="🔵 Доли касс по городам")
-            st.plotly_chart(fig, use_container_width=True)
+    # Таблица и График
+    st.metric("ОБЩИЙ ЗАПАС ФН (ШТ)", f"{int(fn_total)}")
+    st.dataframe(df_f, use_container_width=True)
+    
+    if kkt > 0:
+        fig = px.pie(df_f, values=df_f.columns[5], names=c_col, hole=0.5, title="Доли ККТ")
+        st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.markdown("<h1>🚚 ЛОГИСТИКА И ПОСЫЛКИ 2026</h1>", unsafe_allow_html=True)
-    if not df_l_raw.empty:
-        # Берем столбцы B, K, L (весь массив)
-        df_l = df_l_raw.copy()
-        
-        st.sidebar.subheader("🔍 Поиск")
-        search = st.sidebar.text_input("Введи номер или город:")
-        if search:
-            df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+    st.markdown("<h1>🚚 ЛОГИСТИКА: ПОЛНЫЙ МАССИВ</h1>", unsafe_allow_html=True)
+    
+    # ФИЛЬТРЫ ЛОГИСТИКИ (Партнер, Получатель, Номер)
+    st.sidebar.subheader("🔍 Глубокая фильтрация")
+    search = st.sidebar.text_input("🔍 Поиск по номеру/тексту:")
+    
+    # B - Партнер (1), K - Номер (10), L - Деньги (11)
+    # Предположим, Получатель в столбце C(2) или D(3)
+    sel_lp = st.sidebar.multiselect("Отправитель (Партнер):", sorted(df_l.iloc[:, 1].unique().astype(str)))
+    sel_rec = st.sidebar.multiselect("Получатель/Город:", sorted(df_l.iloc[:, 2].unique().astype(str)))
+    df_res = df_l.copy()
+    if sel_lp: df_res = df_res[df_res.iloc[:, 1].astype(str).isin(sel_lp)]
+    if sel_rec: df_res = df_res[df_res.iloc[:, 2].astype(str).isin(sel_rec)]
+    if search:
+        df_res = df_res[df_res.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-        # Сумма денег (Столбец L - индекс 11)
-        df_l['Sum'] = df_l.iloc[:, 11].apply(clean_money)
-        total_m = df_l['Sum'].sum()
+    # Расчет денег (Столбец L)
+    money = df_res.iloc[:, 11].apply(clean_num).sum()
+    st.metric("СУММА ОБЯЗАТЕЛЬСТВ", f"{money:,.0f} ₽".replace(',', ' '))
 
-        col1, col2 = st.columns(2)
-        col1.metric("СУММА ОБЯЗАТЕЛЬСТВ", f"{total_m:,.0f} ₽".replace(',', ' '))
-        col2.metric("ВСЕГО ЗАПИСЕЙ", len(df_l))
+    st.write("### 📋 Полная информация по логистике")
+    st.dataframe(df_res, use_container_width=True)
 
-        st.dataframe(df_l.iloc[:, 0:80], use_container_width=True)
-
-        if total_m > 0:
-            fig_l = px.pie(df_l[df_l['Sum']>0], values='Sum', names=df_l.columns[1], 
-                           hole=0.5, title="📊 Обязательства по партнерам")
-            st.plotly_chart(fig_l, use_container_width=True)
+    if money > 0:
+        fig_l = px.pie(df_res, values=df_res.iloc[:, 11].apply(clean_num), names=df_res.columns[1], 
+                       hole=0.5, title="Распределение денег по партнерам")
+        st.plotly_chart(fig_l, use_container_width=True)
