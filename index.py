@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Настройка под Pocophone
+# Масштабная настройка под Pocophone (Белый дизайн)
 st.set_page_config(page_title="RBS: Глобальный Массив", layout="wide")
 
 st.markdown("""
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# НОВАЯ ССЫЛКА (которую ты прислал)
+# ССЫЛКА (Дима, проверь, чтобы доступ в таблице был открыт!)
 URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
 def clean_num(val):
@@ -37,7 +37,6 @@ def load_data():
         df = pd.read_csv(URL).iloc[:80, :18].fillna(0)
         return df
     except Exception as e:
-        st.error(f"Ошибка доступа к данным: {e}")
         return pd.DataFrame()
 
 st.markdown("<h1>🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ СТРУКТУРОЙ</h1>", unsafe_allow_html=True)
@@ -45,19 +44,19 @@ st.markdown("<h1>🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ СТРУКТУРО
 df_raw = load_data()
 
 if not df_raw.empty:
-    # Динамический поиск колонок
+    # 1. ПОИСК КОЛОНОК (Решает KeyError)
     c_sp    = find_col(df_raw, ['партнер', 'сервис'])
     c_city  = find_col(df_raw, ['склад', 'город'])
     c_kkt   = find_col(df_raw, ['ккт', 'наличие'])
     c_spent = find_col(df_raw, ['расход', 'истратил'])
-    c_money = find_col(df_raw, ['сумма', 'стоимость'])
+    c_money = find_col(df_raw, ['сумма', 'стоимость', '15-фн'])
     c_exit  = find_col(df_raw, ['выезд', 'тип рег'])
 
     # Чистим цифры (защита от TypeError)
     for col in [c_kkt, c_spent, c_money]:
         if col: df_raw[col] = df_raw[col].apply(clean_num)
 
-    # --- ФИЛЬТРЫ ---
+    # 2. ФИЛЬТРЫ (Защита от TypeError в сортировке)
     st.write("### 🔍 Глобальная фильтрация")
     f1, f2, f3 = st.columns(3)
     
@@ -77,14 +76,14 @@ if not df_raw.empty:
     if sel_city: df = df[df[c_city].astype(str).isin(sel_city)]
     if sel_exit: df = df[df[c_exit].astype(str).isin(sel_exit)]
 
-    # --- ИТОГИ ---
+    # 3. ИТОГИ (МЕТРИКИ)
     st.divider()
     m1, m2, m3 = st.columns(3)
-    m1.metric("РАСХОД ФН", f"{df[c_spent].sum() if c_spent else 0} шт")
+    m1.metric("РАСХОД ФН (ИТОГО)", f"{df[c_spent].sum() if c_spent else 0} шт")
     m2.metric("ДЕНЕЖНЫЙ МАССИВ", f"{df[c_money].sum() if c_money else 0:,.0f} ₽".replace(',', ' '))
     m3.metric("ОСТАТОК ККТ", f"{df[c_kkt].sum() if c_kkt else 0} шт")
 
-    # --- ГРАФИКИ-БУБЛИКИ ---
+    # 4. ГРАФИКИ-БУБЛИКИ
     st.divider()
     g1, g2 = st.columns(2)
     with g1:
@@ -98,9 +97,8 @@ if not df_raw.empty:
                              hole=0.5, title="🟢 Доли остатков ККТ")
             st.plotly_chart(fig_kkt, use_container_width=True)
 
-    # --- ТАБЛИЦА ---
+    # 5. ТАБЛИЦА МАССИВА
     st.write("### 📋 Полный реестр (A:R)")
     st.dataframe(df, use_container_width=True, hide_index=True)
     else:
-    st.error("Система не видит данные по этой ссылке. Дима, проверь настройки доступа в самой таблице (Доступ ограничен -> Все, у кого есть ссылка)!")
-    
+    st.error("Система не видит данные. Дима, проверь доступ 'Все, у кого есть ссылка' в таблице!")
