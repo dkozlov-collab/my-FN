@@ -104,7 +104,7 @@ with tab_a:
     summary = df_num.groupby(df_s.columns[1])[cols_to_sum].sum().reset_index()
     st.write("#### Детальные остатки по позициям:")
     st.data_editor(summary, use_container_width=True, hide_index=True)
-    with tab_s:
+with tab_s:
     st.data_editor(df_s, use_container_width=True, height=600, hide_index=True)
 
 with tab_l:
