@@ -94,3 +94,11 @@ with t3:
     st.dataframe(df_l_f, use_container_width=True, height=600)
 
 with t4:
+    st.write("### 📈 Аналитика по регионам")
+    if not df_s.empty:
+        df_city = df_s.copy()
+        df_city['KKT_VAL'] = df_city.iloc[:, 5].apply(to_n)
+        city_sum = df_city.groupby(df_city.columns[2])['KKT_VAL'].sum().reset_index()
+        fig_bar = px.bar(city_sum, x=city_sum.columns[0], y='KKT_VAL', title="ККТ по городам", color_discrete_sequence=['#00f2fe'])
+        fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.plotly_chart(fig_bar, use_container_width=True)
