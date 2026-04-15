@@ -69,7 +69,7 @@ if not df_raw.empty:
     if sel_city: df = df[df[c_city].astype(str).isin(sel_city)]
 
     # --- ТАБЛИЦА ---
-    st.write("### 📋 Реестр (A:R)")
+    st.write("### 📋 Остатки
     st.dataframe(df, use_container_width=True, hide_index=True)
 
     # --- НИЖНИЕ ИТОГИ (ЦИФРЫ) ---
