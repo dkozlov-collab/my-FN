@@ -129,8 +129,6 @@ if st.sidebar.button("ВЫЙТИ"):
     st.session_state.auth = False
     st.rerun()
 
-# 3. Выводим уже отфильтрованную таблицу
-st.data_editor(df_filtered, use_container_width=True, height=600)
 # --- БЛОК ПРОДВИНУТОЙ ФИЛЬТРАЦИИ ПО СТОЛБЦАМ ---
 st.write("### 🛠 Фильтры по столбцам")
 
