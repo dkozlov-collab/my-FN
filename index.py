@@ -128,3 +128,18 @@ with t3:
 if st.sidebar.button("ВЫЙТИ"):
     st.session_state.auth = False
     st.rerun()
+# --- МАЛЕНЬКИЙ СКРИПТ ФИЛЬТРАЦИИ ---
+
+# 1. Создаем поле для ввода текста
+search_query = st.text_input("🔍 Быстрый фильтр (введите город, ТТН или партнера):", "")
+
+# 2. Фильтруем данные (df — это твоя переменная с данными)
+if search_query:
+    # Ищем совпадения по всей таблице сразу
+    mask = df.apply(lambda r: r.astype(str).str.contains(search_query, case=False).any(), axis=1)
+    df_filtered = df[mask]
+else:
+    df_filtered = df
+
+# 3. Выводим уже отфильтрованную таблицу
+st.data_editor(df_filtered, use_container_width=True, height=600)
