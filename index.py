@@ -10,8 +10,8 @@ st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; }
     [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 32px; font-weight: bold; }
-    h1 { color: #1A237E !important; text-align: center; border-bottom: 3px solid #007BFF; padding-bottom: 10px; }
-    .section-box { background-color: #F8F9FA; padding: 20px; border-radius: 15px; border: 2px solid #007BFF; margin-bottom: 20px; }
+    h1, h2 { color: #1A237E !important; text-align: center; border-bottom: 2px solid #007BFF; padding-bottom: 10px; }
+    .stDataFrame { border: 1px solid #DEE2E6; border-radius: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -19,101 +19,81 @@ st.markdown("""
 URL_SKLAD = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 URL_LOGISTIC = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
-# --- ИНСТРУМЕНТЫ ---
 def extract_money(val):
     try:
         if pd.isna(val) or val == "" or val == 0: return 0
+        # Вытаскиваем только цифры и точки
         res = re.sub(r'[^\d.]', '', str(val).replace(',', '.'))
         return float(res) if res else 0
     except: return 0
 
 @st.cache_data(ttl=5)
-def get_data(url, limit_cols=None):
+def load_all_data():
     try:
-        df = pd.read_csv(url).fillna(0)
-        if limit_cols: df = df.iloc[:80, 0:limit_cols]
-        return df
-    except: return pd.DataFrame()
+        df_s = pd.read_csv(URL_SKLAD).iloc[:80, 0:17].fillna(0)
+        df_l_raw = pd.read_csv(URL_LOGISTIC).fillna(0)
+        df_l = df_l_raw.iloc[:, [1, 10, 11]]
+        df_l.columns = ['Партнер/Город', 'Номера посылок', 'Обязательства']
+        return df_s, df_l
+    except: return pd.DataFrame(), pd.DataFrame()
 
-# --- ПАПКА 1: СКЛАД ---
-def run_sklad():
-    st.markdown("<h1>📦 СКЛАД И ОСТАТКИ</h1>", unsafe_allow_html=True)
-    df = get_data(URL_SKLAD, 17)
-    
-    if not df.empty:
-        # Фильтры в сайдбаре
-        st.sidebar.subheader("⚙️ Настройка Склада")
-        partner_col = df.columns[1]
-        city_col = df.columns[2]
-        
-        sel_p = st.sidebar.multiselect("Выберите Партнера:", sorted(df[partner_col].unique().tolist()))
-        sel_c = st.sidebar.multiselect("Выберите Город:", sorted(df[city_col].unique().tolist()))
+st.sidebar.title("💎 RBS SYSTEM 2026")
+mode = st.sidebar.radio("ВЫБЕРИТЕ РАЗДЕЛ:", ["📦 СКЛАД И ОСТАТКИ", "🚚 ЛОГИСТИКА 2026"])
 
-        df_f = df.copy()
-        if sel_p: df_f = df_f[df_f[partner_col].isin(sel_p)]
-        if sel_c: df_f = df_f[df_f[city_col].isin(sel_c)]
+df_s, df_l = load_all_data()
+
+if mode == "📦 СКЛАД И ОСТАТКИ":
+    st.markdown("<h1>📦 СКЛАД И ОСТАТКИ ФН</h1>", unsafe_allow_html=True)
+    if not df_s.empty:
+        # Фильтры склада
+        st.sidebar.subheader("⚙️ Фильтры Склада")
+        p_col, c_col = df_s.columns[1], df_s.columns[2]
+        sel_p = st.sidebar.multiselect("Выберите Партнера:", sorted(df_s[p_col].unique().astype(str)))
+        sel_c = st.sidebar.multiselect("Выберите Город:", sorted(df_s[c_col].unique().astype(str)))
+
+        df_f = df_s.copy()
+        if sel_p: df_f = df_f[df_f[p_col].astype(str).isin(sel_p)]
+        if sel_c: df_f = df_f[df_f[c_col].astype(str).isin(sel_c)]
 
         # Метрики
-        m1, m2, m3 = st.columns(3)
-        m1.metric("ККТ (ШТ)", int(df_f.iloc[:, 5].sum()))
-        m2.metric("ФН (ШТ)", int(df_f.iloc[:, 6].sum() + df_f.iloc[:, 7].sum()))
-        m3.metric("ДЕНЬГИ (₽)", f"{df_f.iloc[:, 13].apply(extract_money).sum():,.0f}".replace(',', ' '))
+        m1, m2 = st.columns(2)
+        m1.metric("ККТ В НАЛИЧИИ", f"{int(df_f.iloc[:, 5].sum())} шт")
+        m2.metric("ФН (ВСЕГО)", f"{int(df_f.iloc[:, 6].sum() + df_f.iloc[:, 7].sum())} шт")
 
-        # Таблица
-        st.dataframe(df_f, use_container_width=True)
+        st.dataframe(df_f, use_container_width=True, hide_index=True)
 
-        # График
         if not df_f.empty:
-            fig = px.pie(df_f, values=df_f.columns[5], names=city_col, hole=0.5, title="🔵 Доли ККТ по городам")
+            fig = px.pie(df_f, values=df_f.columns[5], names=c_col, hole=0.5, title="🔵 Доли ККТ по городам")
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.error("Нет данных склада!")
+        st.error("Данные склада не найдены!")
 
-# --- ПАПКА 2: ЛОГИСТИКА 2026 ---
-def run_logistics():
-    st.markdown("<h1>🚚 ЛОГИСТИКА 2026</h1>", unsafe_allow_html=True)
-    df_raw = get_data(URL_LOGISTIC)
-    
-    if not df_raw.empty:
-        # Столбцы B(1), K(10), L(11)
-        df = df_raw.iloc[:, [1, 10, 11]].copy()
-        df.columns = ['Партнер / Город', 'Номера посылок', 'Обязательства']
-        df['Money'] = df['Обязательства'].apply(extract_money)
-
-        # Фильтры
-        st.sidebar.subheader("⚙️ Настройка Логистики")
+else:
+    st.markdown("<h1>🚚 ЛОГИСТИКА И ПОСЫЛКИ 2026</h1>", unsafe_allow_html=True)
+    if not df_l.empty:
+        # Фильтры логистики
+        st.sidebar.subheader("⚙️ Фильтры Логистики")
         search = st.sidebar.text_input("🔍 Поиск (номер/город):")
-        sel_lp = st.sidebar.multiselect("Фильтр по Партнеру:", sorted(df['Партнер / Город'].unique().tolist()))
+        sel_lp = st.sidebar.multiselect("Фильтр по Партнеру:", sorted(df_l['Партнер/Город'].unique().astype(str)))
 
-        df_l = df.copy()
-        if sel_lp: df_l = df_l[df_l['Партнер / Город'].isin(sel_lp)]
-        if search: df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+        df_res = df_l.copy()
+        if sel_lp: df_res = df_res[df_res['Партнер/Город'].astype(str).isin(sel_lp)]
+        if search: df_res = df_res[df_res.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-        # Метрики
+        # Метрики логистики с умным подсчетом денег
+        df_res['Money'] = df_res['Обязательства'].apply(extract_money)
+        total_m = df_res['Money'].sum()
+        
         c1, c2 = st.columns(2)
-        total = df_l['Money'].sum()
-        c1.metric("СУММА ОБЯЗАТЕЛЬСТВ", f"{total:,.0f} ₽".replace(',', ' '))
-        c2.metric("ПОСЫЛОК В РАБОТЕ", len(df_l[df_l['Номера посылок'] != 0]))
+        c1.metric("СУММА ОБЯЗАТЕЛЬСТВ", f"{total_m:,.0f} ₽".replace(',', ' '))
+        c2.metric("АКТИВНЫХ ПОСЫЛОК", len(df_res[df_res['Номера посылок'] != 0]))
 
-        # Таблица
-        st.dataframe(df_l[['Партнер / Город', 'Номера посылок', 'Обязательства']], use_container_width=True, height=400)
-        # График Логистики
-        if total > 0:
-            fig_l = px.pie(df_l[df_l['Money'] > 0], values='Money', names='Партнер / Город', 
-                           hole=0.5, title="📊 Распределение обязательств (₽)")
+        st.dataframe(df_res[['Партнер/Город', 'Номера посылок', 'Обязательства']], use_container_width=True, hide_index=True, height=500)
+        if total_m > 0:
+            fig_l = px.pie(df_res[df_res['Money'] > 0], values='Money', names='Партнер/Город', hole=0.5, title="📊 Распределение денег (₽)")
             st.plotly_chart(fig_l, use_container_width=True)
         
-        # Кнопка Excel
-        csv = df_l.to_csv(index=False).encode('utf-8-sig')
+        csv = df_res.to_csv(index=False).encode('utf-8-sig')
         st.download_button("📥 Скачать Логистику в Excel", data=csv, file_name='RBS_Logistics_2026.csv')
     else:
-        st.error("Нет данных логистики!")
-
-# --- МЕНЮ ---
-st.sidebar.title("💎 RBS SYSTEM")
-choice = st.sidebar.radio("РАЗДЕЛ:", ["📦 Склад", "🚚 Логистика 2026"])
-
-if choice == "📦 Склад":
-    run_sklad()
-else:
-    run_logistics()
+        st.error("Данные логистики не найдены!")
