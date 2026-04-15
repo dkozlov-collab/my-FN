@@ -90,7 +90,7 @@ with t3:
     if search:
         df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     st.dataframe(df_l, use_container_width=True)
-    with t4:
+with t4:
     st.markdown("<h1>📉 АНАЛИТИКА СПИСАНИЯ</h1>", unsafe_allow_html=True)
     
     # График списания по партнерам
