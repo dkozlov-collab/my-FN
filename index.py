@@ -2,19 +2,18 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Настройка для Pocophone
-st.set_page_config(page_title="RBS: Склад", layout="wide")
+# Настройка под Pocophone
+st.set_page_config(page_title="RBS: Склад и Финансы", layout="wide")
 
-# Дизайн
 st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; }
     [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 28px; font-weight: bold; }
-    .total-box { background-color: #F0F8FF; padding: 15px; border-radius: 10px; border: 2px solid #007BFF; margin-bottom: 20px; }
+    h1 { color: #1A237E !important; text-align: center; border-bottom: 3px solid #007BFF; padding-bottom: 10px; }
+    .total-box { background-color: #F8F9FA; padding: 15px; border-radius: 10px; border: 2px solid #007BFF; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-# ССЫЛКА (A:Q до 80 строки)
 URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
 def clean_num(val):
@@ -31,6 +30,7 @@ def find_col(df, keywords):
 @st.cache_data(ttl=5)
 def load_data():
     try:
+        # Диапазон A:Q (0:17) и 80 строк
         df = pd.read_csv(URL).iloc[:80, 0:17].fillna(0)
         return df
     except: return pd.DataFrame()
@@ -38,51 +38,56 @@ def load_data():
 df_raw = load_data()
 
 if not df_raw.empty:
-    # 1. Сбор колонок
+    # Ищем колонки
     c_city = find_col(df_raw, ['склад', 'город'])
-    c_kkt  = find_col(df_raw, ['ккт', 'наличие'])
+    c_sp = find_col(df_raw, ['партнер', 'сервис'])
+    c_kkt = find_col(df_raw, ['ккт', 'наличие'])
     c_fn15 = find_col(df_raw, ['фн-15', 'фн 15'])
     c_fn36 = find_col(df_raw, ['фн-36', 'фн 36'])
-    c_money = find_col(df_raw, ['сумма', 'деньги'])
-    c_spent = find_col(df_raw, ['расход', 'истратил'])
+    c_money = find_col(df_raw, ['сумма', 'деньги', 'стоимость'])
 
-    # Чистка цифр
-    for c in [c_kkt, c_fn15, c_fn36, c_money, c_spent]:
+    # Чистим цифры
+    for c in [c_kkt, c_fn15, c_fn36, c_money]:
         if c: df_raw[c] = df_raw[c].apply(clean_num)
 
-    # 2. МЕНЮ
-    st.sidebar.title("УПРАВЛЕНИЕ")
-    page = st.sidebar.radio("Раздел:", ["📊 Сводка", "📋 Таблица A:Q"])
+    # --- ПУЛЬТ ФИЛЬТРАЦИИ ---
+    st.sidebar.title("🔍 ФИЛЬТРЫ АНАЛИЗА")
+    
+    # Фильтр по Партнерам
+    partners = ["Все"] + sorted([str(x) for x in df_raw[c_sp].unique() if str(x) != '0']) if c_sp else ["Все"]
+    sel_p = st.sidebar.multiselect("Выберите Партнеров (АБ и др.):", partners, default="Все")
+    
+    # Фильтр по Городам
+    cities = ["Все"] + sorted([str(x) for x in df_raw[c_city].unique() if str(x) != '0']) if c_city else ["Все"]
+    sel_c = st.sidebar.multiselect("Выберите Города:", cities, default="Все")
 
-    if page == "📊 Сводка":
-        st.subheader("🏛️ ГЛОБАЛЬНЫЕ ОСТАТКИ")
-        
-        # Красивые итоги
-        st.markdown("<div class='total-box'>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
-        col1.metric("ОБОРОТ (₽)", f"{df_raw[c_money].sum() if c_money else 0:,.0f}".replace(',', ' '))
-        col2.metric("ОСТАТОК ККТ", f"{df_raw[c_kkt].sum() if c_kkt else 0} шт")
-        col3.metric("ВСЕГО ФН", f"{(df_raw[c_fn15].sum() if c_fn15 else 0) + (df_raw[c_fn36].sum() if c_fn36 else 0)} шт")
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Применяем фильтрацию к данным
+    df = df_raw.copy()
+    if "Все" not in sel_p and sel_p:
+        df = df[df[c_sp].astype(str).isin(sel_p)]
+    if "Все" not in sel_c and sel_c:
+        df = df[df[c_city].astype(str).isin(sel_c)]
 
-        # Таблица по городам
-        if c_city:
-            st.write("### 📍 По городам")
-            summary = df_raw.groupby(c_city).agg({c_money:'sum', c_kkt:'sum', c_fn15:'sum', c_fn36:'sum'}).reset_index()
-            st.dataframe(summary.sort_values(by=c_money, ascending=False), use_container_width=True, hide_index=True)
+    # --- САЙТ ---
+    st.markdown("<h1>🏛️ RBS: УМНЫЙ МОНИТОРИНГ</h1>", unsafe_allow_html=True)
+    
+    # Итоги по фильтру
+    st.markdown("<div class='total-box'>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("ВЫБРАННЫЙ ОБОРОТ", f"{df[c_money].sum() if c_money else 0:,.0f} ₽".replace(',', ' '))
+    col2.metric("ККТ В НАЛИЧИИ", f"{df[c_kkt].sum() if c_kkt else 0} шт")
+    col3.metric("ЗАПАС ФН (15/36)", f"{(df[c_fn15].sum() if c_fn15 else 0) + (df[c_fn36].sum() if c_fn36 else 0)} шт")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        # График
-        if c_money and df_raw[c_money].sum() > 0:
-            fig = px.pie(df_raw[df_raw[c_money]>0], values=c_money, names=c_city, hole=0.5, title="Доли оборота")
-            st.plotly_chart(fig, use_container_width=True)
+    # График (Бублик) по выбранному
+    if c_money and df[c_money].sum() > 0:
+        fig = px.pie(df[df[c_money]>0], values=c_money, names=c_city, hole=0.5, 
+                     title="📊 Доли оборота (по фильтру)")
+        st.plotly_chart(fig, use_container_width=True)
 
-    else:
-        st.subheader("📋 ПОЛНЫЙ РЕЕСТР")
-        search = st.text_input("🔍 Поиск по таблице:")
-        df_view = df_raw.copy()
-        if search:
-            df_view = df_view[df_view.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-        st.dataframe(df_view, use_container_width=True, hide_index=True)
+    # Таблица результата
+    st.write("### 📋 Результаты анализа (A:Q)")
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 else:
-    st.error("Данные не загружены. Проверь доступ к таблице!")
+    st.error("Данные не найдены!")
