@@ -21,7 +21,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- ФУНКЦИИ ОБРАБОТКИ (БЕЗОПАСНЫЕ) ---
+# --- БЕЗОПАСНЫЕ ФУНКЦИИ ---
 def to_n(v):
     try:
         # Вытаскиваем только цифры, чтобы не было ошибок TypeError
@@ -29,11 +29,11 @@ def to_n(v):
         return float(n[0]) if n else 0.0
     except: return 0.0
 
-def fmt(num):
-    # Безопасное форматирование числа с пробелом (решает твою ошибку ValueError)
+def fmt_money(num):
+    # Безопасное форматирование числа (решает ошибку ValueError)
     return "{:,.0f}".format(num).replace(",", " ")
 
-# --- ЗАГРУЗКА ДАННЫХ ---
+# --- ЗАГРУЗКА ---
 U_S = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 U_L = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
@@ -47,21 +47,20 @@ def load_all():
 
 df_s_raw, df_l_raw = load_all()
 
-# --- САЙДБАР (ГЛОБАЛЬНАЯ ВЕРИФИКАЦИЯ) ---
+# --- САЙДБАР (ВЕРИФИКАЦИЯ) ---
 st.sidebar.title("💎 RBS COMMAND")
-partners = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
-sel_p = st.sidebar.multiselect("Верификация партнеров:", [p for p in partners if p not in ["0.0", "", "0"]])
+# Собираем партнеров из обоих файлов
+p_all = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
+sel_p = st.sidebar.multiselect("Выберите партнеров:", [x for x in p_all if x not in ["0.0", "", "0"]])
 
-df_s = df_s_raw[df_s_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_s_raw
-df_l = df_l_raw[df_l_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_l_raw
+df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_s_raw
+df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_l_raw
 
 # --- ВКЛАДКИ ---
-t1, t2, t3, t4 = st.tabs(["📊 ОБЩИЙ ДАШБОРД", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА 2026", "📈 ГРАФИКИ И АНАЛИЗ"])
+t1, t2, t3, t4 = st.tabs(["📊 ДАШБОРД", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА", "📈 АНАЛИТИКА"])
 
 with t1:
     st.markdown("<h1>💎 ГЛОБАЛЬНЫЙ МОНИТОРИНГ</h1>", unsafe_allow_html=True)
-    
-    # Расчеты
     kkt = df_s.iloc[:, 5].apply(to_n).sum()
     fn = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
     money = df_l.iloc[:, 11].apply(to_n).sum()
@@ -69,8 +68,7 @@ with t1:
     c1, c2, c3 = st.columns(3)
     c1.metric("КАССЫ В НАЛИЧИИ", f"{int(kkt)} шт")
     c2.metric("ФН ОСТАТОК", f"{int(fn)} шт")
-    # Используем безопасную функцию fmt()
-    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt(money)} ₽")
+    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt_money(money)} ₽")
     
     st.divider()
     col_a, col_b = st.columns(2)
@@ -84,23 +82,22 @@ with t1:
         st.plotly_chart(fig2, use_container_width=True)
 
 with t2:
-    st.write("### 📦 Полный реестр склада (80 столбцов)")
+    st.write("### 📦 Полный реестр склада")
     st.dataframe(df_s, use_container_width=True, height=600)
     with t3:
     st.write("### 🚚 Логистика и посылки")
     search = st.text_input("🔍 Быстрый поиск:")
+    df_l_f = df_l.copy()
     if search:
-        df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-    st.dataframe(df_l, use_container_width=True, height=600)
+        df_l_f = df_l_f[df_l_f.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+    st.dataframe(df_l_f, use_container_width=True, height=600)
 
 with t4:
     st.write("### 📈 Аналитика по регионам")
     if not df_s.empty:
-        # Группировка по городу (столбец 2) и кассам (столбец 5)
         df_city = df_s.copy()
         df_city['KKT_VAL'] = df_city.iloc[:, 5].apply(to_n)
-        city_summary = df_city.groupby(df_city.columns[2])['KKT_VAL'].sum().reset_index()
-        
-        fig_bar = px.bar(city_summary, x=city_summary.columns[0], y='KKT_VAL', title="Запасы ККТ по городам", color_discrete_sequence=['#00f2fe'])
+        city_sum = df_city.groupby(df_city.columns[2])['KKT_VAL'].sum().reset_index()
+        fig_bar = px.bar(city_sum, x=city_sum.columns[0], y='KKT_VAL', title="ККТ по городам", color_discrete_sequence=['#00f2fe'])
         fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
         st.plotly_chart(fig_bar, use_container_width=True)
