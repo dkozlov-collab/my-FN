@@ -128,18 +128,32 @@ with t3:
 if st.sidebar.button("ВЫЙТИ"):
     st.session_state.auth = False
     st.rerun()
-# --- МАЛЕНЬКИЙ СКРИПТ ФИЛЬТРАЦИИ ---
-
-# 1. Создаем поле для ввода текста
-search_query = st.text_input("🔍 Быстрый фильтр (введите город, ТТН или партнера):", "")
-
-# 2. Фильтруем данные (df — это твоя переменная с данными)
-if search_query:
-    # Ищем совпадения по всей таблице сразу
-    mask = df.apply(lambda r: r.astype(str).str.contains(search_query, case=False).any(), axis=1)
-    df_filtered = df[mask]
-else:
-    df_filtered = df
 
 # 3. Выводим уже отфильтрованную таблицу
 st.data_editor(df_filtered, use_container_width=True, height=600)
+# --- БЛОК ПРОДВИНУТОЙ ФИЛЬТРАЦИИ ПО СТОЛБЦАМ ---
+st.write("### 🛠 Фильтры по столбцам")
+
+# Создаем копию данных для фильтрации (df — это твоя переменная с данными)
+df_filtered = df.copy()
+
+# Выбираем столбцы, по которым хочешь фильтровать (например, первые 10)
+columns_to_filter = df.columns[:10] 
+
+# Создаем горизонтальные колонки для фильтров
+cols = st.columns(len(columns_to_filter))
+
+for i, col_name in enumerate(columns_to_filter):
+    with cols[i]:
+        # Собираем уникальные значения в столбце
+        unique_vals = sorted(df[col_name].unique().astype(str))
+        # Добавляем вариант "Все", чтобы фильтр не срабатывал сразу
+        selected_val = st.selectbox(f"{col_name}", ["Все"] + unique_vals, key=f"filter_{col_name}")
+        
+        if selected_val != "Все":
+            df_filtered = df_filtered[df_filtered[col_name].astype(str) == selected_val]
+
+st.divider()
+
+# Теперь выводим отфильтрованную таблицу
+st.data_editor(df_filtered, use_container_width=True, height=600, hide_index=True)
