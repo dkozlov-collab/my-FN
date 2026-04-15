@@ -8,10 +8,8 @@ st.set_page_config(layout="wide", page_title="RBS TOTAL CONTROL 2026")
 st.markdown("""
 <style>
     .stApp { background-color: #F8F9FA; }
-    /* Стиль бокового меню */
     [data-testid="stSidebar"] { background-color: #FFFFFF; border-right: 1px solid #E9ECEF; }
     .main-header { font-size: 28px; font-weight: 800; color: #1A237E; margin-bottom: 20px; }
-    /* Красивые карточки */
     [data-testid="metric-container"] {
         background-color: #FFFFFF; border: 1px solid #E9ECEF; border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
@@ -60,8 +58,8 @@ def load_data():
     try:
         s = pd.read_csv(S_URL).iloc[:, 0:80].fillna(0)
         l = pd.read_csv(L_URL).iloc[:5000, 0:80].fillna(0)
-        # Очистка от технических строк "0" и заголовков
         s = s[~s.iloc[:, 1].astype(str).str.strip().isin(["0", "0.0", "", "СП", "Партнер"])]
+        l = l[~l.iloc[:, 1].astype(str).str.strip().isin(["0", "0.0", ""])]
         return s, l
     except: return pd.DataFrame(), pd.DataFrame()
 
@@ -71,11 +69,9 @@ df_s_raw, df_l_raw = load_data()
 with st.sidebar:
     st.markdown(f"### 👤 {st.session_state.user_role}")
     st.divider()
-    # Кнопки навигации вместо вкладок сверху
     menu = st.radio("МЕНЮ СИСТЕМЫ:", ["🔢 АНАЛИТИКА", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА"])
     st.divider()
     
-    # Глобальный фильтр для Админа (только в меню)
     role = st.session_state.user_role
     if role == "ALL":
         p_opts = sorted(df_s_raw.iloc[:, 1].unique().astype(str))
@@ -90,17 +86,17 @@ with st.sidebar:
         st.session_state.auth = False
         st.rerun()
 
-# --- 6. ОСНОВНОЙ КОНТЕНТ (ЗАВИСИТ ОТ ВЫБОРА СЛЕВА) ---
+# --- 6. ОСНОВНОЙ КОНТЕНТ ---
 st.markdown(f"<div class='main-header'>{menu}</div>", unsafe_allow_html=True)
 
 if menu == "🔢 АНАЛИТИКА":
-    # Карточки наверху
     c1, c2, c3 = st.columns(3)
     kkt = df_s.iloc[:, 5].apply(to_n).sum()
     fn_all = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
     c1.metric("ККТ ВСЕГО", f"{int(kkt)} шт")
     c2.metric("ФН ВСЕГО", f"{int(fn_all)} шт")
     c3.metric("ПАРТНЕРОВ", f"{len(df_s.iloc[:, 1].unique())}")
+
     st.write("### Сводная таблица (Итоги)")
     map_cols = {
         df_s.columns[1]: "ПАРТНЕР", df_s.columns[3]: "План", df_s.columns[4]: "Мин.ост",
@@ -113,22 +109,33 @@ if menu == "🔢 АНАЛИТИКА":
     summ = df_c.groupby(df_s.columns[1])[list(map_cols.keys())[1:]].sum().reset_index()
     summ.rename(columns=map_cols, inplace=True)
     
-    # Строка ИТОГО
     total = summ.sum(numeric_only=True).to_frame().T
     total["ПАРТНЕР"] = "ОБЩИЙ ИТОГ"
     summ = pd.concat([summ, total], ignore_index=True)
     st.data_editor(summ, use_container_width=True, hide_index=True)
 
 elif menu == "📦 СКЛАД (80 СТ)":
-    # Фильтрация прямо справа/сверху
-    search_s = st.text_input("🔍 Поиск по складу (серийник, город, модель):")
+    search_s = st.text_input("🔍 Поиск по складу:")
     if search_s:
         df_s = df_s[df_s.apply(lambda r: r.astype(str).str.contains(search_s, case=False).any(), axis=1)]
-    st.write("Кликните на любой заголовок для сортировки")
     st.data_editor(df_s, use_container_width=True, height=700, hide_index=True)
 
 elif menu == "🚚 ЛОГИСТИКА":
-    search_l = st.text_input("🔍 Поиск отправки (ТТН, получатель):")
+    # --- НОВЫЙ ФИЛЬТР ПОЛУЧАТЕЛЯ ---
+    # Предположим, что Получатель находится в 5-м столбце (индекс 4) логистики
+    # Если столбец другой, просто поменяй индекс [4] ниже
+    recipient_col = df_l.columns[4] 
+    recipients = sorted([str(x) for x in df_l[recipient_col].unique() if str(x) not in ["0", "0.0", ""]])
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        sel_recipient = st.selectbox("👤 Фильтр: Получатель", ["Все"] + recipients)
+    with col2:
+        search_l = st.text_input("🔍 Поиск по ТТН / Комментарию:")
+
+    if sel_recipient != "Все":
+        df_l = df_l[df_l[recipient_col].astype(str) == sel_recipient]
     if search_l:
         df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search_l, case=False).any(), axis=1)]
+
     st.data_editor(df_l, use_container_width=True, height=700, hide_index=True)
