@@ -173,3 +173,47 @@ if search_text:
 # Выводим таблицу
 st.data_editor(df_l_final, use_container_width=True, height=600, hide_index=True)
 # --- КОНЕЦ ДОБАВОЧНОГО БЛОКА ---
+elif menu == "🚚 ЛОГИСТИКА":
+    st.subheader("🚚 Детальный фильтр отправлений")
+
+    # --- НАСТРОЙКА СТОЛБЦОВ (проверь индексы под свою таблицу!) ---
+    # Допустим: 4-й это Имя, 5-й это Компания, 3-й это Город
+    # Мы создаем временную колонку "Полное имя" для фильтра
+    df_l_view = df_l.copy()
+    
+    # Создаем красивое описание для списка (Имя + Компания + Город)
+    # df_l.columns[4] - Получатель, df_l.columns[5] - Компания (если есть)
+    df_l_view['Full_Recipient'] = (
+        df_l_view.iloc[:, 4].astype(str) + " | " + 
+        df_l_view.iloc[:, 5].astype(str)
+    ).str.replace("0", "").str.strip(" | ")
+
+    # Собираем уникальный список для выпадающего меню
+    recipient_options = sorted(df_l_view['Full_Recipient'].unique())
+    recipient_options = [x for x in recipient_options if x not in ["", "nan", "0"]]
+
+    # Интерфейс фильтров
+    f_col1, f_col2 = st.columns([1.5, 1])
+    
+    with f_col1:
+        sel_full_rec = st.selectbox(
+            "🏢 Выберите получателя (ФИО | Компания):", 
+            ["Все получатели"] + recipient_options,
+            key="full_rec_filter"
+        )
+    
+    with f_col2:
+        fast_search = st.text_input("🔍 Поиск по ТТН / Деталям:", key="fast_l_search")
+
+    # Применяем фильтры
+    if sel_full_rec != "Все получатели":
+        df_l_view = df_l_view[df_l_view['Full_Recipient'] == sel_full_rec]
+    
+    if fast_search:
+        df_l_view = df_l_view[df_l_view.apply(lambda r: r.astype(str).str.contains(fast_search, case=False).any(), axis=1)]
+
+    # Удаляем временную колонку перед показом, чтобы не мешала
+    df_final_display = df_l_view.drop(columns=['Full_Recipient'])
+
+    st.write(f"Найдено записей: {len(df_final_display)}")
+    st.data_editor(df_final_display, use_container_width=True, height=600, hide_index=True)
