@@ -1,58 +1,56 @@
 import streamlit as st
+import pandas as pd
 
-# Настройка страницы (иконка и широкое отображение)
+# Настройка страницы
 st.set_page_config(page_title="Мониторинг ФН", layout="wide", page_icon="📊")
 
-# --- БОКОВАЯ ПАНЕЛЬ (ВХОД И РОЛИ) ---
-st.sidebar.title("🔐 Доступ к системе")
+# Ссылка на твою таблицу в формате CSV для чтения
+sheet_id = "1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg"
+gid = "792602024"
+csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
 
-# Поле для ввода пароля (скрывает символы)
-password = st.sidebar.text_input("Введите ваш секретный код", type="password")
+@st.cache_data(ttl=60)  # Данные обновляются раз в минуту
+def load_data():
+    return pd.read_csv(csv_url)
 
-# Базовые роли, доступные всем
-roles = ["Альфа-Банк", "Менеджеры", "Партнеры"]
-
-# Твой личный доступ (пароль 777)
-if password == "777":
-    roles.insert(0, "👑 АДМИН (Дима)")
-    st.sidebar.success("Привет, Дима! Админка открыта.")
-elif password != "":
-    st.sidebar.error("Неверный код доступа")
-
-# Выбор раздела
-user_role = st.sidebar.radio("Выберите раздел статистики:", roles)
-
-# --- ГЛАВНЫЙ ЭКРАН ---
-st.title("📊 Система управления данными ККТ")
-st.write(f"Текущий режим: {user_role}")
-st.divider()
-
-if user_role == "👑 АДМИН (Дима)":
-    st.header("⚙️ Панель управления (Все регионы)")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Всего ФН", "1,250 шт", "+12")
-    col2.metric("Активных ККТ", "840 шт", "+5")
-    col3.metric("Выручка (день)", "450к ₽", "15%")
-    col4.metric("Ошибки ККТ", "2 шт", "-1", delta_color="inverse")
+try:
+    df = load_data()
     
-    st.subheader("📋 Полный лог операций")
-    st.info("Здесь будет твоя полная Google Таблица со всеми данными.")
+    st.sidebar.title("🔐 Доступ")
+    password = st.sidebar.text_input("Введите код", type="password")
 
-elif user_role == "Альфа-Банк":
-    st.header("🏦 Статистика для Альфа-Банка")
-    st.info("Данные по партнерскому коду: 120-46")
-    col1, col2 = st.columns(2)
-    col1.metric("Регистраций сегодня", "18 шт")
-    col2.metric("В обработке", "5 шт")
+    if password == "777":
+        st.title("👑 Админ-панель: Учет оборудования")
+        
+        # --- ФИЛЬТР ИЗ ВЫПАДАЮЩЕГО СПИСКА ---
+        st.subheader("🔍 Фильтр по типу регистрации")
+        
+        # Получаем уникальные значения из первой колонки (Тип рег)
+        types = ["Все типы"] + sorted(df['Тип рег'].dropna().unique().tolist())
+        selected_type = st.selectbox("Выберите статус из колонки 'Тип рег':", types)
 
-elif user_role == "Менеджеры":
-    st.header("👨‍💻 Рабочий стол менеджера")
-    st.write("План по отгрузкам на апрель:")
-    st.progress(72) # Шкала на 72%
-    st.metric("План выполнен на", "72%", "+3%")
+        # Фильтруем таблицу
+        if selected_type != "Все типы":
+            filtered_df = df[df['Тип рег'] == selected_type]
+        else:
+            filtered_df = df
 
-elif user_role == "Партнеры":
-    st.header("🤝 Личный кабинет партнера")
-    partner_id = st.selectbox("Выберите ваш ID:", ["Ульяновск-01", "Самара-05", "Казань-03"])
-    st.write(f"Отображаем данные для: {partner_id}")
-    st.warning("Для просмотра детальных отчетов обратитесь к администратору.")
+        # --- СТАТИСТИКА (МЕТРИКИ) ---
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Найдено строк", len(filtered_df))
+        col2.metric("Всего в базе", len(df))
+        
+        st.divider()
+
+        # --- ОТОБРАЖЕНИЕ ТАБЛИЦЫ ---
+        st.write(f"Показываем данные для: {selected_type}")
+        st.dataframe(filtered_df, use_container_width=True)
+
+    else:
+        st.title("📊 Мониторинг ККТ")
+        st.warning("Для просмотра данных введите пароль в боковом меню.")
+
+except Exception as e:
+    st.error("Ошибка доступа к данным.")
+    st.write("Убедитесь, что в таблице включен доступ 'Все, у кого есть ссылка'.")
+    st.write(f"Техническая ошибка: {e}")
