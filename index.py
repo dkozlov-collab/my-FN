@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Настройка под Pocophone (Чистый белый дизайн)
-st.set_page_config(page_title="RBS: Главная Аналитика", layout="wide")
+# Масштабный интерфейс для Pocophone (Белый, чистый, мощный)
+st.set_page_config(page_title="RBS: Глобальное Управление", layout="wide")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #FFFFFF; color: #212529; }
-    [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 32px; font-weight: bold; }
-    h1, h2, h3 { color: #343A40 !important; font-family: sans-serif; }
-    .main-box { border: 2px solid #007BFF; padding: 20px; border-radius: 15px; background: #F0F8FF; }
+    .stApp { background-color: #FFFFFF; }
+    [data-testid="stMetricValue"] { color: #D32F2F !important; font-size: 32px; font-weight: bold; }
+    h1, h2, h3 { color: #1A237E !important; font-family: 'Segoe UI', sans-serif; }
+    .main-stat { border-left: 5px solid #1A237E; padding-left: 15px; background: #F5F5F5; border-radius: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -19,8 +19,7 @@ URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXE
 def clean_num(val):
     try:
         if pd.isna(val): return 0
-        s = str(val).replace(' ', '').replace('₽', '').replace(',', '.')
-        return int(float(s))
+        return int(float(str(val).replace(' ', '').replace('₽', '').replace(',', '.')))
     except: return 0
 
 def find_col(df, key):
@@ -28,77 +27,79 @@ def find_col(df, key):
         if key.lower() in str(c).replace('\n', ' ').lower(): return c
     return None
 
-@st.cache_data(ttl=10)
-def load_data():
+@st.cache_data(ttl=5)
+def load_massive_data():
     try:
-        # Берем диапазон A:R, строки до 80
-        df = pd.read_csv(URL).fillna(0)
-        df = df.iloc[:80, :18]
+        # Берем весь основной массив до 100 строки
+        df = pd.read_csv(URL).head(100).fillna(0)
         return df
     except: return pd.DataFrame()
 
-st.title("🚀 ГЛАВНАЯ АНАЛИТИКА RBS")
+st.title("🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ СТРУКТУРОЙ")
 
-df_raw = load_data()
+df_raw = load_massive_data()
 
 if not df_raw.empty:
-    # Динамический поиск колонок
-    c_exit = find_col(df_raw, 'Тип рег') # Выезды
+    # Ключевые колонки структуры
     c_sp = find_col(df_raw, 'Партнер')
     c_city = find_col(df_raw, 'Склад')
+    c_exit = find_col(df_raw, 'Тип рег')
     c_kkt = find_col(df_raw, 'ККТ')
-    c_fn_used = find_col(df_raw, 'истратил') # Истрачено ФН
+    c_fn_used = find_col(df_raw, 'истратил')
     c_sum = find_col(df_raw, 'Сумма')
 
-    # --- БЛОК ФИЛЬТРОВ (Сверху, компактно) ---
-    with st.expander("🔍 Настройки фильтрации (Выезды, Партнеры, Города)"):
-        f1, f2, f3 = st.columns(3)
-        with f1:
-            e_list = ["Все типы"] + sorted([str(x) for x in df_raw[c_exit].unique() if x != 0]) if c_exit else ["Все"]
-            sel_e = st.selectbox("Тип выезда", e_list)
-        with f2:
-            p_list = ["Все партнеры"] + sorted([str(x) for x in df_raw[c_sp].unique() if x != 0]) if c_sp else ["Все"]
-            sel_p = st.selectbox("Сервис-Партнер", p_list)
-        with f3:
-            c_list = ["Все города"] + sorted([str(x) for x in df_raw[c_city].unique() if x != 0]) if c_city else ["Все"]
-            sel_c = st.selectbox("Город/Склад", c_list)
-
-    # Применение фильтров
-    df = df_raw.copy()
-    if sel_e != "Все типы": df = df[df[c_exit].astype(str) == sel_e]
-    if sel_p != "Все партнеры": df = df[df[c_sp].astype(str) == sel_p]
-    if sel_c != "Все города": df = df[df[c_city].astype(str) == sel_c]
-
-    # Подготовка цифр
+    # Чистим весь массив данных
     for col in [c_kkt, c_fn_used, c_sum]:
-        if col: df[col] = df[col].apply(clean_num)
+        if col: df_raw[col] = df_raw[col].apply(clean_num)
 
-    # --- ГЛАВНЫЕ ПОКАЗАТЕЛИ ---
-    st.markdown("### 💰 ТЕКУЩЕЕ СОСТОЯНИЕ")
+    # --- ГЛАВНАЯ ПАНЕЛЬ: РАСХОДЫ И ИТОГИ ---
+    st.subheader("📊 ОБЩИЕ ПОКАЗАТЕЛИ СТРУКТУРЫ")
     m1, m2, m3 = st.columns(3)
     
-    total_money = df[c_sum].sum() if c_sum else 0
-    total_kkt = df[c_kkt].sum() if c_kkt else 0
-    total_fn_used = df[c_fn_used].sum() if c_fn_used else 0
+    total_spent = df_raw[c_fn_used].sum() if c_fn_used else 0
+    total_cash = df_raw[c_sum].sum() if c_sum else 0
+    total_stock = df_raw[c_kkt].sum() if c_kkt else 0
     
-    m1.metric("ДЕНЕГ В ТОВАРЕ", f"{total_money:,.0f} ₽".replace(',', ' '))
-    m2.metric("ОСТАТОК ККТ", f"{total_kkt} шт")
-    m3.metric("ИСТРАЧЕНО ФН", f"{total_fn_used} шт")
+    m1.metric("ОБЩИЙ РАСХОД ФН", f"{total_spent} шт")
+    m2.metric("ДЕНЕЖНЫЙ МАССИВ", f"{total_cash:,.0f} ₽".replace(',', ' '))
+    m3.metric("ТЕКУЩИЙ ОСТАТОК", f"{total_stock} шт")
 
     st.divider()
 
-    # --- ГРАФИК РАСХОДА ---
-    st.markdown("### 📈 ГРАФИК РАСХОДА И ОСТАТКОВ")
-    if c_city and (total_kkt > 0 or total_fn_used > 0):
-        # Создаем данные для графика расхода
-        chart_data = df[df[c_kkt] > 0].nlargest(10, c_kkt)
-        fig = px.bar(chart_data, x=c_city, y=[c_kkt, c_fn_used] if c_fn_used else [c_kkt], 
-                     barmode='group', title="Расход vs Остаток по городам")
-        st.plotly_chart(fig, use_container_width=True)
+    # --- АНАЛИТИКА ПО ФИЛИАЛАМ (РАСХОДЫ) ---
+    st.subheader("📈 РАСХОД ПО ФИЛИАЛАМ И СП")
+    
+    if c_sp and c_fn_used:
+        # Группируем расход по партнерам
+        sp_expense = df_raw.groupby(c_sp)[c_fn_used].sum().reset_index()
+        sp_expense = sp_expense[sp_expense[c_fn_used] > 0].sort_values(by=c_fn_used, ascending=False)
+        
+        fig_expense = px.bar(
+            sp_expense, 
+            x=c_sp, 
+            y=c_fn_used, 
+            text_auto=True,
+            title="Кто больше всех истратил ФН",
+            color=c_fn_used,
+            color_continuous_scale='Reds'
+        )
+        st.plotly_chart(fig_expense, use_container_width=True)
 
-    # --- ДЕТАЛЬНАЯ ТАБЛИЦА ---
-    st.markdown("### 📋 РЕЕСТР")
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    # --- МАССИВНЫЕ ФИЛЬТРЫ ---
+    with st.expander("🛠️ ГЛУБОКАЯ ФИЛЬТРАЦИЯ МАССИВА"):
+        f1, f2 = st.columns(2)
+        with f1:
+            sel_e = st.multiselect("Тип выезда (удаленно/выезд)", sorted(df_raw[c_exit].unique()))
+        with f2:
+            sel_city = st.multiselect("Выбор филиалов (города)", sorted(df_raw[c_city].unique()))
+
+        df_filtered = df_raw.copy()
+        if sel_e: df_filtered = df_filtered[df_filtered[c_exit].isin(sel_e)]
+        if sel_city: df_filtered = df_filtered[df_filtered[c_city].isin(sel_city)]
+
+    # --- ДЕТАЛЬНАЯ ТАБЛИЦА СТРУКТУРЫ ---
+    st.subheader("📋 РЕЕСТР ВСЕЙ СТРУКТУРЫ")
+    st.dataframe(df_filtered, use_container_width=True, hide_index=True)
 
 else:
-    st.error("Ошибка загрузки! Проверь доступ к таблице.")
+    st.error("Система не видит таблицу. Проверь права доступа!")
