@@ -38,7 +38,7 @@ def load_data():
         return df
     except: return pd.DataFrame()
 
-st.markdown("<h1>🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ СТРУКТУРОЙ</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🏛️ RBS:</h1>", unsafe_allow_html=True)
 
 df_raw = load_data()
 
