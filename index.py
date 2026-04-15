@@ -3,104 +3,101 @@ import pandas as pd
 import plotly.express as px
 import re
 
-# --- 1. СТИЛЬ (NEON DARK) ---
-st.set_page_config(layout="wide", page_title="RBS TOTAL CONTROL")
+# --- 1. КОНФИГУРАЦИЯ И СВЕТЛЫЙ СТИЛЬ ---
+st.set_page_config(layout="wide", page_title="RBS GLOBAL SYSTEM 2026")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #050c1a; color: #e0e6ed; }
-    [data-testid="stMetricValue"] { color: #00f2fe !important; font-size: 30px !important; font-weight: bold; text-shadow: 0 0 10px #00f2fe; }
-    [data-testid="metric-container"] { background: #0a1e3c; border: 1px solid #00f2fe; border-radius: 12px; padding: 15px; }
-    h1, h2 { text-align: center; color: #00f2fe; text-transform: uppercase; text-shadow: 0 0 15px #00f2fe; }
-    .stDataFrame { border: 1px solid #00f2fe; border-radius: 10px; }
+    .stApp { background-color: #FFFFFF; color: #1C1C1E; }
+    [data-testid="stMetricValue"] { color: #0047AB !important; font-size: 32px !important; font-weight: 800; }
+    [data-testid="metric-container"] { 
+        background-color: #F2F2F7; 
+        border: 1px solid #D1D1D6; 
+        border-radius: 12px; 
+        padding: 20px;
+    }
+    .stTabs [data-baseweb="tab-list"] { background-color: #F2F2F7; border-radius: 10px; padding: 5px; }
+    .stTabs [data-baseweb="tab"] { color: #1C1C1E; font-weight: 600; }
+    .stTabs [aria-selected="true"] { background-color: #FFFFFF !important; border-radius: 7px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h1 { color: #000000; text-align: center; font-weight: 900; letter-spacing: -1px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ДАННЫЕ (РУЧНАЯ ЗАГРУЗКА) ---
+# --- 2. ДВИЖОК ЗАГРУЗКИ ДАННЫХ ---
 S_URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
-def parse_n(val):
+def clean_num(v):
     try:
-        nums = re.findall(r'\d+', str(val).replace(' ', ''))
-        return float(nums[0]) if nums else 0.0
+        res = re.findall(r'\d+', str(v).replace(' ',''))
+        return float(res[0]) if res else 0.0
     except: return 0.0
 
 @st.cache_data(ttl=5)
-def load():
-    s = pd.read_csv(S_URL).iloc[:500, 0:80].fillna("")
-    l = pd.read_csv(L_URL).iloc[:1000, 0:80].fillna("")
-    return s, l
+def fetch_data():
+    try:
+        # Склад 80 столбцов / Логистика 1000 строк
+        s_data = pd.read_csv(S_URL).iloc[:500, 0:80].fillna("")
+        l_data = pd.read_csv(L_URL).iloc[:1000, 0:80].fillna("")
+        return s_data, l_data
+    except Exception as e:
+        st.error(f"Доступ заблокирован! Опубликуй таблицы в интернете (CSV). Ошибка: {e}")
+        return pd.DataFrame(), pd.DataFrame()
 
-df_s_raw, df_l_raw = load()
+df_s_raw, df_l_raw = fetch_data()
 
-# --- 3. ГЛОБАЛЬНЫЙ ФИЛЬТР ---
-st.sidebar.title("💎 RBS ВЕРИФИКАЦИЯ")
-partners = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
-sel_p = st.sidebar.multiselect("Выберите партнера:", [x for x in partners if x not in ["", "0", "0.0"]])
+# --- 3. СКВОЗНАЯ СОРТИРОВКА И ФИЛЬТРАЦИЯ ---
+st.sidebar.header("⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ")
+p_all = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
+sel_p = st.sidebar.multiselect("ВЕРИФИКАЦИЯ ПАРТНЕРОВ (АБ и др.):", [x for x in p_all if x not in ["", "0", "0.0"]])
 
+# Применяем фильтр к обоим источникам одновременно
 df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_s_raw
 df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_l_raw
 
-# --- 4. ВКЛАДКИ ---
-t1, t2, t3, t4 = st.tabs(["📊 ДАШБОРД", "📋 СКЛАД (ДЕТАЛИ)", "🚚 ЛОГИСТИКА", "📉 ГРАФИКИ СПИСАНИЯ"])
+# --- 4. ФУНКЦИОНАЛЬНЫЕ ВКЛАДКИ ---
+t1, t2, t3, t4 = st.tabs(["💎 ДАШБОРД", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА", "📊 АНАЛИТИКА"])
 
 with t1:
-    st.markdown("<h1>ГЛОБАЛЬНЫЕ ОСТАТКИ</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>RBS GLOBAL MONITORING</h1>", unsafe_allow_html=True)
     
-    # Расчеты остатков
-    kkt_now = df_s.iloc[:, 5].apply(parse_n).sum() # В наличии
-    fn_now = df_s.iloc[:, 6].apply(parse_n).sum() + df_s.iloc[:, 7].apply(parse_n).sum()
-    
-    # Расчет списания (Столбцы 9 и 10 - пример списания)
-    # Если у тебя списание в других столбцах, просто поменяй индексы (8, 9)
-    kkt_off = df_s.iloc[:, 8].apply(parse_n).sum() 
+    # Расчет ключевых остатков
+    kkt_val = df_s.iloc[:, 5].apply(clean_num).sum()
+    fn_val = df_s.iloc[:, 6].apply(clean_num).sum() + df_s.iloc[:, 7].apply(clean_num).sum()
+    cash_val = df_l.iloc[:, 11].apply(clean_num).sum()
     
     c1, c2, c3 = st.columns(3)
-    c1.metric("КАССЫ В НАЛИЧИИ", f"{int(kkt_now)} шт")
-    c2.metric("ФН В НАЛИЧИИ", f"{int(fn_now)} шт")
-    c3.metric("ВСЕГО СПИСАНО", f"{int(kkt_off)} шт", delta_color="inverse")
-
+    c1.metric("ККТ В НАЛИЧИИ", f"{int(kkt_val)} шт")
+    c2.metric("ФН В НАЛИЧИИ", f"{int(fn_val)} шт")
+    # Красивый вывод денег
+    money_fmt = "{:,.0f}".format(cash_val).replace(",", " ")
+    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{money_fmt} ₽")
+    
     st.divider()
     
-    col_l, col_r = st.columns(2)
-    with col_l:
-        st.write("### Остатки по городам")
-        fig_sklad = px.pie(df_s, values=df_s.columns[5], names=df_s.columns[2], hole=0.5)
-        fig_sklad.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
-        st.plotly_chart(fig_sklad, use_container_width=True)
-    
-    with col_r:
-        st.write("### Обязательства (Деньги)")
-        money = df_l.iloc[:, 11].apply(parse_n).sum()
-        m_str = f"{int(money):,}".replace(",", " ")
-        st.metric("СУММА К ОПЛАТЕ", f"{m_str} ₽")
-        fig_money = px.pie(df_l, values=df_l.iloc[:, 11].apply(parse_n), names=df_l.columns[1], hole=0.5)
-        fig_money.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
-        st.plotly_chart(fig_money, use_container_width=True)
+    # Краткий обзор
+    col_pie_1, col_pie_2 = st.columns(2)
+    with col_pie_1:
+        st.plotly_chart(px.pie(df_s, values=df_s.columns[5], names=df_s.columns[1], title="Доли ККТ по партнерам", hole=0.5), use_container_width=True)
+    with col_pie_2:
+        st.plotly_chart(px.pie(df_l, values=df_l.iloc[:, 11].apply(clean_num), names=df_l.columns[1], title="Доли ₽ в логистике", hole=0.5), use_container_width=True)
 
 with t2:
-    st.write("### 📋 Полный реестр склада (Все 80 столбцов)")
-    # Выводим остатки по каждому столбцу, где есть числа
-    st.dataframe(df_s, use_container_width=True)
+    st.write("### 📦 Интерактивный Склад (80 столбцов)")
+    # Кликабельная таблица с поиском и сортировкой
+    st.data_editor(df_s, use_container_width=True, height=600, hide_index=True)
 
 with t3:
-    st.write("### 🚚 Логистика и посылки")
-    search = st.text_input("🔍 Поиск по серийнику/городу:")
-    if search:
-        df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-    st.dataframe(df_l, use_container_width=True)
+    st.write("### 🚚 Логистика и Потоки данных")
+    search_q = st.text_input("🔍 Глобальный поиск (город, серийник, имя):")
+    if search_q:
+        df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search_q, case=False).any(), axis=1)]
+    st.data_editor(df_l, use_container_width=True, height=600, hide_index=True)
+
 with t4:
-    st.markdown("<h1>📉 АНАЛИТИКА СПИСАНИЯ</h1>", unsafe_allow_html=True)
-    
-    # График списания по партнерам
-    df_off = df_s.copy()
-    df_off['СПИСАНО'] = df_off.iloc[:, 8].apply(parse_n) # Допустим, 9-й столбец - это списание
-    
-    fig_off = px.bar(df_off, x=df_off.columns[1], y='СПИСАНО', color=df_off.columns[2], 
-                     title="Количество списанного оборудования по партнерам")
-    fig_off.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-    st.plotly_chart(fig_off, use_container_width=True)
-    
-    st.write("### Список списанных позиций")
-    st.table(df_off[df_off['СПИСАНО'] > 0][[df_off.columns[1], df_off.columns[2], 'СПИСАНО']])
+    st.write("### 📉 Анализ движения оборудования")
+    # График списания / остатков по городам
+    df_city = df_s.copy()
+    df_city['KKT_COUNT'] = df_city.iloc[:, 5].apply(clean_num)
+    fig_bar = px.bar(df_city, x=df_city.columns[2], y='KKT_COUNT', color=df_city.columns[1], title="Распределение касс по городам")
+    st.plotly_chart(fig_bar, use_container_width=True)
