@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Масштабный дизайн под твой телефон
+# Настройка под твой телефон (Масштабный белый дизайн)
 st.set_page_config(page_title="RBS: Глобальный Массив", layout="wide")
 
 st.markdown("""
@@ -10,7 +10,7 @@ st.markdown("""
     .stApp { background-color: #FFFFFF; }
     [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 32px; font-weight: bold; }
     h1 { color: #1A237E !important; text-align: center; border-bottom: 3px solid #007BFF; padding-bottom: 10px; }
-    .total-box { background-color: #F0F8FF; padding: 20px; border-radius: 15px; border: 2px solid #007BFF; margin-top: 20px; }
+    .total-line { background-color: #F0F8FF; padding: 15px; border-radius: 10px; border: 2px solid #007BFF; margin-top: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -32,6 +32,7 @@ def find_col(df, keywords):
 @st.cache_data(ttl=5)
 def load_data():
     try:
+        # ЗАДАЧА: А:R до 80 строки
         df = pd.read_csv(URL).iloc[:80, :18].fillna(0)
         return df
     except: return pd.DataFrame()
@@ -41,7 +42,7 @@ st.markdown("<h1>🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ</h1>", unsafe_allo
 df_raw = load_data()
 
 if not df_raw.empty:
-    # Ищем колонки для итогов
+    # Ищем колонки для итоговой строки
     c_sp    = find_col(df_raw, ['партнер', 'сервис'])
     c_city  = find_col(df_raw, ['склад', 'город'])
     c_kkt   = find_col(df_raw, ['остатки ккт', 'наличие ккт', 'ккт'])
@@ -50,7 +51,7 @@ if not df_raw.empty:
     c_sim   = find_col(df_raw, ['sim', 'сим'])
     c_spent = find_col(df_raw, ['расход', 'истратил'])
 
-    # Чистим цифры
+    # Чистим данные (защита от TypeError)
     for col in [c_kkt, c_fn15, c_fn36, c_sim, c_spent]:
         if col: df_raw[col] = df_raw[col].apply(clean_num)
 
@@ -59,22 +60,24 @@ if not df_raw.empty:
     f1, f2 = st.columns(2)
     with f1:
         sp_list = sorted([str(x) for x in df_raw[c_sp].unique() if str(x) not in ['0', '']]) if c_sp else []
-        sel_sp = st.multiselect("Партнер", sp_list)
+        sel_sp = st.multiselect("Выберите Партнера", sp_list)
     with f2:
         city_list = sorted([str(x) for x in df_raw[c_city].unique() if str(x) not in ['0', '']]) if c_city else []
-        sel_city = st.multiselect("Город", city_list)
+        sel_city = st.multiselect("Выберите Город", city_list)
 
     df = df_raw.copy()
     if sel_sp: df = df[df[c_sp].astype(str).isin(sel_sp)]
     if sel_city: df = df[df[c_city].astype(str).isin(sel_city)]
 
     # --- ТАБЛИЦА ---
-    st.write("### 📋 Остатки
+    st.write("### 📋 Реестр (A:R)")
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-    # --- НИЖНИЕ ИТОГИ (ЦИФРЫ) ---
-    st.markdown("<div class='total-box'>", unsafe_allow_html=True)
-    st.subheader("🏁 ИТОГО ОСТАЛОСЬ:")
+    # --- ОСТАТКИ В СТРОКУ (ИТОГИ) ---
+    st.markdown("<div class='total-line'>", unsafe_allow_html=True)
+    st.subheader("🏁 ИТОГО ОСТАЛОСЬ ПО ВЫБОРКЕ:")
+    
+    # Все цифры в один ряд
     t1, t2, t3, t4 = st.columns(4)
     with t1:
         st.metric("ККТ", f"{df[c_kkt].sum() if c_kkt else 0} шт")
@@ -89,8 +92,9 @@ if not df_raw.empty:
     # --- КРУГЛЫЙ ГРАФИК ---
     if c_spent and df[df[c_spent]>0].any().any():
         st.divider()
-        fig = px.pie(df[df[c_spent]>0], values=c_spent, names=c_city if c_city else c_sp, hole=0.5, title="🔵 Доли расходов")
+        fig = px.pie(df[df[c_spent]>0], values=c_spent, names=c_city if c_city else c_sp, 
+                     hole=0.5, title="🔵 Доли расходов")
         st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.error("Ошибка: Проверь доступ в таблице!")
+    st.error("Ошибка: Проверь доступ к Google Таблице!")
