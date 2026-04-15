@@ -2,20 +2,19 @@ import streamlit as st
 import pandas as pd
 import re
 
-# --- 1. НАСТРОЙКИ И СТИЛЬ ---
-st.set_page_config(layout="wide", page_title="RBS TOTAL CONTROL 2026")
+# --- 1. НАСТРОЙКИ ИНТЕРФЕЙСА ---
+st.set_page_config(layout="wide", page_title="RBS GLOBAL ERP")
 
 st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; }
-    [data-testid="stMetricValue"] { color: #1A237E !important; font-size: 24px !important; font-weight: 800; }
-    [data-testid="metric-container"] { border: 1px solid #DEE2E6; border-radius: 8px; padding: 10px; background-color: #F8F9FA; }
-    .main-header { font-size: 26px; font-weight: 800; color: #1A237E; text-align: center; margin-bottom: 20px; }
-    .summary-table { font-size: 14px; }
+    [data-testid="stMetricValue"] { color: #1A237E !important; font-size: 28px !important; font-weight: 800; }
+    [data-testid="metric-container"] { border: 1px solid #DEE2E6; border-radius: 8px; padding: 15px; background-color: #F8F9FA; }
+    .main-header { font-size: 24px; font-weight: 800; color: #1A237E; text-align: center; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. БАЗА ПОЛЬЗОВАТЕЛЕЙ ---
+# --- 2. РУЧНАЯ БАЗА ПОЛЬЗОВАТЕЛЕЙ ---
 USER_DB = {
     "admin": {"pass": "admin777", "partner": "ALL"},
     "ab1": {"pass": "ab2026", "partner": "АБ"},
@@ -23,12 +22,12 @@ USER_DB = {
     "br": {"pass": "br123", "partner": "БР"}
 }
 
-# --- 3. АВТОРИЗАЦИЯ ---
+# --- 3. СИСТЕМА ВХОДА ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.markdown("<h1 style='text-align: center;'>🔐 ВХОД В RBS СИСТЕМУ</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🔐 ВХОД В RBS SYSTEM</h1>", unsafe_allow_html=True)
     _, col_log, _ = st.columns([1, 1, 1])
     with col_log:
         u = st.text_input("Логин")
@@ -42,7 +41,7 @@ if not st.session_state.auth:
                 st.error("Неверный логин или пароль")
     st.stop()
 
-# --- 4. ЗАГРУЗКА ДАННЫХ ---
+# --- 4. ЗАГРУЗКА ДАННЫХ (CSV ИЗ GOOGLE) ---
 S_URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
@@ -59,147 +58,77 @@ def load():
         s = pd.read_csv(S_URL).iloc[:1000, 0:80].fillna(0)
         l = pd.read_csv(L_URL).iloc[:5000, 0:80].fillna(0)
         return s, l
-    except: return pd.DataFrame(), pd.DataFrame()
+    except:
+        st.error("Ошибка доступа к Google Таблицам")
+        return pd.DataFrame(), pd.DataFrame()
 
 df_s_raw, df_l_raw = load()
 
 # --- 5. ФИЛЬТР ПО РОЛИ ---
 role = st.session_state.user_role
 if role == "ALL":
-    st.sidebar.success("ДОСТУП: АДМИНИСТРАТОР")
+    st.sidebar.success("РЕЖИМ: АДМИНИСТРАТОР")
     p_list = sorted([x for x in df_s_raw.iloc[:, 1].unique() if str(x) not in ["0", "0.0", ""]])
-    sel_p = st.sidebar.multiselect("Фильтр партнеров:", p_list)
+    sel_p = st.sidebar.multiselect("Выберите партнера:", p_list)
     df_s = df_s_raw[df_s_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_s_raw
     df_l = df_l_raw[df_l_raw.iloc[:, 1].isin(sel_p)] if sel_p else df_l_raw
 else:
-    st.sidebar.info(f"ПАРТНЕР: {role}")
+    st.sidebar.info(f"ДОСТУП: {role}")
     df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).str.contains(role, case=False)]
     df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).str.contains(role, case=False)]
 
-# --- 6. КОНТЕНТ ---
-st.markdown(f"<div class='main-header'>ОТЧЕТ RBS: {role}</div>", unsafe_allow_html=True)
-t1, t2, t3 = st.tabs(["🔢 АНАЛИТИКА (ОСТАТКИ)", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА"])
+# --- 6. ОСНОВНОЙ КОНТЕНТ ---
+st.markdown(f"<div class='main-header'>ОТЧЕТ: {role}</div>", unsafe_allow_html=True)
+t1, t2, t3, t4 = st.tabs(["🔢 АНАЛИТИКА", "📦 СКЛАД", "🚚 ЛОГИСТИКА", "⚙️ СЕРВИС"])
 
 with t1:
-    st.write("### 📊 Сводные цифры по партнерам (как в таблице)")
+    st.write("### 📊 Сводные цифры остатков")
     
-    # Расчет по столбцам из твоего фото (be81a3e0)
-    # Предполагаем индексы столбцов на основе твоих данных:
-    # 3: План, 4: Мин.остаток, 5: ККТ, 6: ФН-15, 7: ФН-36, 8: SIM, 9: В пути
-    
-    cols = {
-        df_s.columns[1]: "СП",
-        df_s.columns[3]: "План",
-        df_s.columns[4]: "Мин. остаток",
-        df_s.columns[5]: "Остатки ККТ",
-        df_s.columns[6]: "Остатки ФН-15",
-        df_s.columns[7]: "Остатки ФН-36",
-        df_s.columns[8]: "Остатки SIM",
-        df_s.columns[9]: "В пути ККТ"
+    # Ручной выбор столбцов для анализа (План, Мин.ост, ККТ, ФН, SIM, В пути)
+    cols_map = {
+        df_s.columns[1]: "ПАРТНЕР",
+        df_s.columns[3]: "ПЛАН",
+        df_s.columns[4]: "МИН.ОСТ",
+        df_s.columns[5]: "ККТ",
+        df_s.columns[6]: "ФН-15",
+        df_s.columns[7]: "ФН-36",
+        df_s.columns[8]: "SIM",
+        df_s.columns[9]: "В ПУТИ"
     }
     
     df_calc = df_s.copy()
-    for c in list(cols.keys())[1:]:
+    for c in list(cols_map.keys())[1:]:
         df_calc[c] = df_calc[c].apply(to_n)
         
-    summary = df_calc.groupby(df_s.columns[1])[list(cols.keys())[1:]].sum().reset_index()
-    summary.rename(columns=cols, inplace=True)
+    summary = df_calc.groupby(df_s.columns[1])[list(cols_map.keys())[1:]].sum().reset_index()
+    summary.rename(columns=cols_map, inplace=True)
     
     # Добавляем строку ИТОГО
-    totals = summary.sum(numeric_only=True).to_frame().T
-    totals["СП"] = "ИТОГО"
-    summary = pd.concat([summary, totals], ignore_index=True)
+    itogo = summary.sum(numeric_only=True).to_frame().T
+    itogo["ПАРТНЕР"] = "ИТОГО"
+    summary = pd.concat([summary, itogo], ignore_index=True)
     
-    # Вывод карточек сверху
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("ККТ ИТОГО", f"{int(totals['Остатки ККТ'].iloc[0])}")
-    m2.metric("ФН ИТОГО", f"{int(totals['Остатки ФН-15'].iloc[0] + totals['Остатки ФН-36'].iloc[0])}")
-    m3.metric("SIM ИТОГО", f"{int(totals['Остатки SIM'].iloc[0])}")
-    m4.metric("В ПУТИ", f"{int(totals['В пути ККТ'].iloc[0])}")
-
+    # Крупные цифры
+    c1, c2, c3 = st.columns(3)
+    c1.metric("ККТ ВСЕГО", f"{int(itogo['ККТ'].iloc[0])} шт")
+    c2.metric("ФН (15+36)", f"{int(itogo['ФН-15'].iloc[0] + itogo['ФН-36'].iloc[0])} шт")
+    c3.metric("SIM-КАРТЫ", f"{int(itogo['SIM'].iloc[0])} шт")
+    
     st.divider()
-    st.write("#### Детальная таблица остатков:")
     st.data_editor(summary, use_container_width=True, hide_index=True)
 
 with t2:
+    st.write("### 📦 Реестр склада (80 столбцов)")
     st.data_editor(df_s, use_container_width=True, height=600, hide_index=True)
 
 with t3:
+    st.write("### 🚚 Логистика (5000 строк)")
     st.data_editor(df_l, use_container_width=True, height=600, hide_index=True)
 
-if st.sidebar.button("ВЫЙТИ"):
-    st.session_state.auth = False
-    st.rerun()
-    # --- ПРОДОЛЖЕНИЕ КОДА (Добавляем к существующему разделу t1 - Аналитика) ---
-
-with t1:
-    st.divider()
-    st.write("### 🔍 ГЛУБОКАЯ ЦИФРОВАЯ ПРОВЕРКА")
-    
-    # 1. Расчет по городам (Москва, Питер и остальные)
-    # Создаем выборку: Город (столбец 2) и ККТ (столбец 5)
-    df_city_sum = df_calc.groupby(df_s.columns[2])[list(cols.keys())[3:]].sum().reset_index()
-    df_city_sum.rename(columns={df_s.columns[2]: "Город/Склад"}, inplace=True)
-    
-    st.write("#### Остатки в разрезе городов:")
-    st.data_editor(df_city_sum, use_container_width=True, hide_index=True)
-
-    # 2. Блок прогнозирования (Расход и запас)
-    st.divider()
-    st.write("### ⏳ ПРОГНОЗ И РАСХОД")
-    
-    # Предположим, 10-й столбец — это расход за месяц
-    df_calc['Monthly_Usage'] = df_s.iloc[:, 10].apply(to_n)
-    total_usage = df_calc['Monthly_Usage'].sum()
-    
-    # Считаем на сколько дней хватит остатка (Inventory Days)
-    days_left = (kkt_total / (total_usage / 30)) if total_usage > 0 else 0
-    
-    c_usage, c_days, c_status = st.columns(3)
-    c_usage.metric("СРЕДНИЙ РАСХОД (МЕС)", f"{int(total_usage)} шт")
-    c_days.metric("ЗАПАС ХВАТИТ НА", f"{int(days_left)} дней")
-    
-    if days_left < 10:
-        c_status.error("🔴 КРИТИЧЕСКИЙ ЗАПАС")
-    elif days_left < 30:
-        c_status.warning("🟡 ТРЕБУЕТСЯ ПОПОЛНЕНИЕ")
-    else:
-        c_status.success("🟢 ЗАПАС В НОРМЕ")
-
-# --- ПРОДОЛЖЕНИЕ РАЗДЕЛА t3 (ЛОГИСТИКА) ---
-with t3:
-    st.divider()
-    st.write("### 🛠 ИНСТРУМЕНТЫ ПРОВЕРКИ ТТН")
-    
-    # Добавляем фильтр по статусу доставки (предположим, 12-й столбец - статус)
-    if not df_l.empty:
-        status_col = df_l.columns[12]
-        all_statuses = df_l[status_col].unique()
-        sel_status = st.multiselect("Фильтр по статусу доставки:", all_statuses)
-        
-        if sel_status:
-            df_l_filtered = df_l[df_l[status_col].isin(sel_status)]
-            st.write(f"Найдено отправлений: {len(df_l_filtered)}")
-            # Выводим только важные колонки для быстрой проверки
-            st.dataframe(df_l_filtered.iloc[:, [1, 3, 11, 12]], use_container_width=True)
-
-# --- НОВАЯ ВКЛАДКА t4 (СЕРВИС И ТЕХПОДДЕРЖКА) ---
-# Добавляем еще одну вкладку в список tabs
-# t1, t2, t3, t4 = st.tabs(["🔢 АНАЛИТИКА", "📦 СКЛАД", "🚚 ЛОГИСТИКА", "🛠 СЕРВИС"])
 with t4:
-    st.write("### 🛠 Техническое обслуживание и ФН")
-    
-    # Считаем сколько ФН скоро закончатся (если есть даты в столбце 15)
-    # Это пример "ручного" расширения функционала
-    st.info("В разработке: Здесь будут выводиться серийные номера ККТ, у которых срок ФН подходит к концу.")
-    
-    # Кнопка выгрузки текущего отчета
-    st.divider()
-    csv = df_s.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 СКАЧАТЬ ОТЧЕТ В EXCEL (CSV)",
-        data=csv,
-        file_name='rbs_report.csv',
-        mime='text/csv',
-    )
-    
+    if st.sidebar.button("ВЫЙТИ"):
+        st.session_state.auth = False
+        st.rerun()
+    if st.button("Сбросить кэш данных"):
+        st.cache_data.clear()
+        st.rerun()
