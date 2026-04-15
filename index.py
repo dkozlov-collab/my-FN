@@ -76,7 +76,7 @@ else:
 
 # --- 6. КОНТЕНТ (БЕЗ ЛИШНЕЙ СТРОКИ) ---
 st.markdown(f"<div class='main-header'>RBS GLOBAL: {role}</div>", unsafe_allow_html=True)
-t1, t2, t3 = st.tabs(["🔢 АНАЛИТИКА ЦИФРЫ", "📦 СКЛАД (80 СТ)", "🚚 ЛОГИСТИКА (5000)"])
+t1, t2, t3 = st.tabs(["🔢 АНАЛИТИКА", "📦 СКЛАД", "🚚 ЛОГИСТИКА"])
 
 with t1:
     st.write("### 📊 Сводные данные")
