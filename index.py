@@ -173,6 +173,7 @@ if search_text:
 # Выводим таблицу
 st.data_editor(df_l_final, use_container_width=True, height=600, hide_index=True)
 # --- КОНЕЦ ДОБАВОЧНОГО БЛОКА ---
+
 elif menu == "🚚 ЛОГИСТИКА":
     st.subheader("🚚 Детальный фильтр отправлений")
 
