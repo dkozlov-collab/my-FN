@@ -139,3 +139,37 @@ elif menu == "🚚 ЛОГИСТИКА":
         df_l = df_l[df_l.apply(lambda r: r.astype(str).str.contains(search_l, case=False).any(), axis=1)]
 
     st.data_editor(df_l, use_container_width=True, height=700, hide_index=True)
+
+# --- ДОБАВОЧНЫЙ БЛОК ДЛЯ ФИЛЬТРАЦИИ ПОЛУЧАТЕЛЯ ---
+st.subheader("🚚 История отправлений")
+
+# Определяем столбец получателя (обычно это 5-й столбец, индекс 4)
+# Если в твоей таблице получатель в другом месте, поменяй 4 на нужный номер минус 1
+recipient_col_idx = 4 
+recipient_col_name = df_l.columns[recipient_col_idx]
+
+# Создаем список уникальных имен для выпадающего списка
+recipients_list = sorted([str(x) for x in df_l[recipient_col_name].unique() if str(x) not in ["0", "0.0", ""]])
+
+# Рисуем фильтры в одну строку
+f_col1, f_col2 = st.columns([1, 2])
+
+with f_col1:
+    chosen_rec = st.selectbox("👤 Выбрать получателя:", ["Все"] + recipients_list, key="rec_select")
+
+with f_col2:
+    search_text = st.text_input("🔍 Поиск по ключевому слову:", key="log_search")
+
+# Применяем фильтрацию
+df_l_final = df_l.copy()
+
+if chosen_rec != "Все":
+    df_l_final = df_l_final[df_l_final[recipient_col_name].astype(str) == chosen_rec]
+
+if search_text:
+    # Ищем текст по всем столбцам логистики
+    df_l_final = df_l_final[df_l_final.apply(lambda r: r.astype(str).str.contains(search_text, case=False).any(), axis=1)]
+
+# Выводим таблицу
+st.data_editor(df_l_final, use_container_width=True, height=600, hide_index=True)
+# --- КОНЕЦ ДОБАВОЧНОГО БЛОКА ---
