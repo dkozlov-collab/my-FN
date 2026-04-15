@@ -2,20 +2,18 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Настройка под мобильный Pocophone (светлый дизайн)
-st.set_page_config(page_title="RBS: Аналитика склада", layout="wide")
+# Настройка под Pocophone (Чистый белый дизайн)
+st.set_page_config(page_title="RBS: Главная Аналитика", layout="wide")
 
-# Стиль: светлый фон, синие акценты
 st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; color: #212529; }
-    [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 26px; font-weight: bold; }
+    [data-testid="stMetricValue"] { color: #007BFF !important; font-size: 32px; font-weight: bold; }
     h1, h2, h3 { color: #343A40 !important; font-family: sans-serif; }
-    .stDataFrame { border: 1px solid #EEE; }
+    .main-box { border: 2px solid #007BFF; padding: 20px; border-radius: 15px; background: #F0F8FF; }
 </style>
 """, unsafe_allow_html=True)
 
-# Твоя ссылка
 URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
 def clean_num(val):
@@ -26,80 +24,81 @@ def clean_num(val):
     except: return 0
 
 def find_col(df, key):
-    """Умный поиск колонки (игнорирует переносы и пробелы)"""
     for c in df.columns:
-        if key.lower() in str(c).replace('\n', ' ').lower():
-            return c
+        if key.lower() in str(c).replace('\n', ' ').lower(): return c
     return None
 
 @st.cache_data(ttl=10)
-def load_stock_data():
+def load_data():
     try:
-        # Загружаем данные и обрезаем: строки до 80, столбцы A-R (0-17)
+        # Берем диапазон A:R, строки до 80
         df = pd.read_csv(URL).fillna(0)
-        df = df.iloc[:80, :18] 
+        df = df.iloc[:80, :18]
         return df
-    except Exception as e:
-        st.error(f"Ошибка доступа к таблице: {e}")
-        return pd.DataFrame()
+    except: return pd.DataFrame()
 
-st.title("📊 Аналитика склада RBS")
+st.title("🚀 ГЛАВНАЯ АНАЛИТИКА RBS")
 
-df = load_stock_data()
+df_raw = load_data()
 
-if not df.empty:
-    # Ищем колонки в диапазоне A:R
-    c_sp = find_col(df, 'Партнер')
-    c_city = find_col(df, 'Склад')
-    c_kkt = find_col(df, 'ККТ')
-    c_fn15 = find_col(df, 'ФН-15')
-    c_fn36 = find_col(df, 'ФН-36')
+if not df_raw.empty:
+    # Динамический поиск колонок
+    c_exit = find_col(df_raw, 'Тип рег') # Выезды
+    c_sp = find_col(df_raw, 'Партнер')
+    c_city = find_col(df_raw, 'Склад')
+    c_kkt = find_col(df_raw, 'ККТ')
+    c_fn_used = find_col(df_raw, 'истратил') # Истрачено ФН
+    c_sum = find_col(df_raw, 'Сумма')
 
-    # --- ФИЛЬТРЫ ---
-    st.sidebar.header("🎯 Настройки")
-    p_list = ["Все партнеры"] + sorted([str(x) for x in df[c_sp].unique() if x != 0 and x != ""]) if c_sp else ["Все"]
-    sel_p = st.sidebar.selectbox("Выберите партнера", p_list)
+    # --- БЛОК ФИЛЬТРОВ (Сверху, компактно) ---
+    with st.expander("🔍 Настройки фильтрации (Выезды, Партнеры, Города)"):
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            e_list = ["Все типы"] + sorted([str(x) for x in df_raw[c_exit].unique() if x != 0]) if c_exit else ["Все"]
+            sel_e = st.selectbox("Тип выезда", e_list)
+        with f2:
+            p_list = ["Все партнеры"] + sorted([str(x) for x in df_raw[c_sp].unique() if x != 0]) if c_sp else ["Все"]
+            sel_p = st.selectbox("Сервис-Партнер", p_list)
+        with f3:
+            c_list = ["Все города"] + sorted([str(x) for x in df_raw[c_city].unique() if x != 0]) if c_city else ["Все"]
+            sel_c = st.selectbox("Город/Склад", c_list)
 
-    df_f = df.copy()
-    if sel_p != "Все партнеры":
-        df_f = df_f[df_f[c_sp].astype(str) == sel_p]
+    # Применение фильтров
+    df = df_raw.copy()
+    if sel_e != "Все типы": df = df[df[c_exit].astype(str) == sel_e]
+    if sel_p != "Все партнеры": df = df[df[c_sp].astype(str) == sel_p]
+    if sel_c != "Все города": df = df[df[c_city].astype(str) == sel_c]
 
-    # --- KPI (ИТОГИ) ---
+    # Подготовка цифр
+    for col in [c_kkt, c_fn_used, c_sum]:
+        if col: df[col] = df[col].apply(clean_num)
+
+    # --- ГЛАВНЫЕ ПОКАЗАТЕЛИ ---
+    st.markdown("### 💰 ТЕКУЩЕЕ СОСТОЯНИЕ")
     m1, m2, m3 = st.columns(3)
     
-    # Чистим числа
-    if c_kkt: df_f[c_kkt] = df_f[c_kkt].apply(clean_num)
-    if c_fn15: df_f[c_fn15] = df_f[c_fn15].apply(clean_num)
-    if c_fn36: df_f[c_fn36] = df_f[c_fn36].apply(clean_num)
+    total_money = df[c_sum].sum() if c_sum else 0
+    total_kkt = df[c_kkt].sum() if c_kkt else 0
+    total_fn_used = df[c_fn_used].sum() if c_fn_used else 0
     
-    val_kkt = df_f[c_kkt].sum() if c_kkt else 0
-    val_fn = (df_f[c_fn15].sum() if c_fn15 else 0) + (df_f[c_fn36].sum() if c_fn36 else 0)
-
-    m1.metric("📦 ККТ всего", f"{val_kkt} шт")
-    m2.metric("📑 ФН (15/36) всего", f"{val_fn} шт")
-    m3.metric("📍 Складов", len(df_f[df_f[c_kkt] > 0]))
+    m1.metric("ДЕНЕГ В ТОВАРЕ", f"{total_money:,.0f} ₽".replace(',', ' '))
+    m2.metric("ОСТАТОК ККТ", f"{total_kkt} шт")
+    m3.metric("ИСТРАЧЕНО ФН", f"{total_fn_used} шт")
 
     st.divider()
 
-    # --- ГРАФИКИ ---
-    col_l, col_r = st.columns(2)
-    
-    with col_l:
-        st.write("#### Доли по ККТ")
-        if val_kkt > 0:
-            fig = px.pie(df_f[df_f[c_kkt]>0], values=c_kkt, names=c_sp, hole=0.5)
-            fig.update_layout(margin=dict(t=20, b=20, l=0, r=0))
-            st.plotly_chart(fig, use_container_width=True)
+    # --- ГРАФИК РАСХОДА ---
+    st.markdown("### 📈 ГРАФИК РАСХОДА И ОСТАТКОВ")
+    if c_city and (total_kkt > 0 or total_fn_used > 0):
+        # Создаем данные для графика расхода
+        chart_data = df[df[c_kkt] > 0].nlargest(10, c_kkt)
+        fig = px.bar(chart_data, x=c_city, y=[c_kkt, c_fn_used] if c_fn_used else [c_kkt], 
+                     barmode='group', title="Расход vs Остаток по городам")
+        st.plotly_chart(fig, use_container_width=True)
 
-    with col_r:
-        st.write("#### Топ-10 складов")
-        if val_kkt > 0:
-            top_df = df_f.nlargest(10, c_kkt)
-            st.bar_chart(top_df.set_index(c_city)[c_kkt])
-
-    # --- ТАБЛИЦА ---
-    st.write("#### 📋 Детальные остатки (A-R)")
-    st.dataframe(df_f, use_container_width=True, hide_index=True)
+    # --- ДЕТАЛЬНАЯ ТАБЛИЦА ---
+    st.markdown("### 📋 РЕЕСТР")
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 else:
-    st.info("Проверь доступ к Google Таблице (кнопка 'Поделиться')")
+    st.error("Ошибка загрузки! Проверь доступ к таблице.")
