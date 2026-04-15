@@ -132,7 +132,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
+URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/edit?pli=1&gid=0#gid=0"
 
 def clean_num(val):
     try:
