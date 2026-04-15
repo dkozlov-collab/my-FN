@@ -2,86 +2,97 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Настройка стиля 2026
-st.set_page_config(page_title="RBS: Склад 1-80", layout="wide", page_icon="🏢")
+# 1. Настройка стиля 2026 (Тренды: Темная тема + Неон)
+st.set_page_config(page_title="RBS Global 2026", layout="wide")
 
-# Ссылка на таблицу (первая база)
-URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
+st.markdown("""
+<style>
+    .stApp { background-color: #0E1117; color: #E0E0E0; }
+    [data-testid="stMetricValue"] { color: #00E5FF !important; text-shadow: 0 0 10px #00E5FF; }
+    .stTabs [data-baseweb="tab-list"] { gap: 20px; }
+    .stTabs [data-baseweb="tab"] { background-color: #161A24; border-radius: 10px; padding: 10px 20px; }
+</style>
+""", unsafe_allow_html=True)
+
+# 2. Твои ссылки
+URL_STOCK = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
+URL_LOGIC = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
 def clean_num(val):
     try:
         s = str(val).replace(' ', '').replace('₽', '').replace(',', '.')
         return int(float(s))
-    except:
-        return 0
+    except: return 0
 
-@st.cache_data(ttl=15)
-def load_stock_only():
+def find_col(df, key_word):
+    """Ищет колонку по ключевому слову, игнорируя переносы строк и пробелы"""
+    for col in df.columns:
+        if key_word.lower() in col.replace('\n', ' ').lower():
+            return col
+    return None
+
+@st.cache_data(ttl=10)
+def load_data(url, rows=None, skip=0):
     try:
-        # Читаем СТРОГО до 80 строки
-        df = pd.read_csv(URL).head(80).fillna(0)
-        
-        # Чистим данные для графиков
-        num_cols = ['Остатки ККТ', 'Итого сумма', 'Остатки ФН-15', 'Остатки ФН-36']
-        for col in num_cols:
-            if col in df.columns:
-                df[col] = df[col].apply(clean_num)
+        df = pd.read_csv(url, skiprows=skip).fillna(0)
+        if rows: df = df.head(rows)
         return df
-    except Exception as e:
-        st.error(f"Ошибка: {e}")
-        return pd.DataFrame()
+    except: return pd.DataFrame()
 
-# ЗАГОЛОВОК
-st.markdown("<h1 style='text-align: center; color: #00E5FF;'>🏢 МОНИТОРИНГ СКЛАДОВ (1-80)</h1>", unsafe_allow_html=True)
+# --- ОСНОВНОЙ ИНТЕРФЕЙС ---
+st.markdown("<h1 style='text-align: center;'>🛰️ RBS: МОНИТОРИНГ И ЛОГИСТИКА 2026</h1>", unsafe_allow_html=True)
 
-df = load_stock_only()
+tab1, tab2 = st.tabs(["📊 СКЛАД (1-80)", "🚚 ЛОГИСТИКА (1150+)"])
 
-if not df.empty:
-    # --- БОКОВАЯ ПАНЕЛЬ (ФИЛЬТРЫ) ---
-    st.sidebar.header("🎯 Фильтр Партнеров")
-    if 'Сервис Партнер' in df.columns:
-        # Убираем нули и пустые из списка партнеров
-        partners = ["ВСЕ"] + sorted([str(p) for p in df['Сервис Партнер'].unique() if p != 0 and p != "0"])
-        sel_p = st.sidebar.selectbox("Выберите банк/партнера:", partners)
+# --- ВКЛАДКА 1: СКЛАД ---
+with tab1:
+    df1 = load_data(URL_STOCK, rows=80)
+    if not df1.empty:
+        # Авто-поиск колонок (решает проблему KeyError)
+        col_kkt = find_col(df1, 'Остатки ККТ')
+        col_sum = find_col(df1, 'Сумма')
+        col_sp = find_col(df1, 'Партнер')
+        col_city = find_col(df1, 'Склад')
+
+        if col_kkt:
+            df1[col_kkt] = df1[col_kkt].apply(clean_num)
+            total = df1[col_kkt].sum()
+            
+            c1, c2 = st.columns(2)
+            c1.metric("📦 ВСЕГО ККТ", f"{total} шт")
+            if col_sum:
+                df1[col_sum] = df1[col_sum].apply(clean_num)
+                c2.metric("💰 ОБЩИЙ КАПИТАЛ", f"{df1[col_sum].sum():,.0f} ₽".replace(',', ' '))
+
+            st.divider()
+
+            # Трендовая аналитика (Крутой Бублик)
+            col_graph1, col_graph2 = st.columns(2)
+            with col_graph1:
+                st.write("### 🍩 Доли Партнеров")
+                if col_sp and total > 0:
+                    fig = px.pie(df1[df1[col_kkt] > 0], values=col_kkt, names=col_sp, hole=0.7)
+                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            with col_graph2:
+                st.write("### 📊 Топ Городов")
+                if col_city:
+                    top_df = df1.nlargest(10, col_kkt)
+                    fig_bar = px.bar(top_df, x=col_city, y=col_kkt, color=col_kkt, text_auto=True)
+                    fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+                    st.plotly_chart(fig_bar, use_container_width=True)
         
-        if sel_p != "ВСЕ":
-            df = df[df['Сервис Партнер'] == sel_p]
+        st.dataframe(df1, use_container_width=True)
 
-    # --- KPI БЛОК ---
-    c1, c2, c3 = st.columns(3)
-    total_kkt = int(df['Остатки ККТ'].sum())
-    c1.metric("📦 ККТ В НАЛИЧИИ", f"{total_kkt} шт")
-    
-    total_money = df['Итого сумма'].sum()
-    c2.metric("💰 СУММА ЗАПАСОВ", f"{total_money:,.0f} ₽".replace(',', ' '))
-    
-    total_fn = int(df['Остатки ФН-15'].sum() + df['Остатки ФН-36'].sum())
-    c3.metric("📑 ВСЕГО ФН", f"{total_fn} шт")
-
-    st.divider()
-
-    # --- ГРАФИКИ (ПЕРЧИНКА 2026) ---
-    col_l, col_r = st.columns(2)
-    
-    with col_l:
-        st.write("### 🍩 Доли по Складам")
-        if total_kkt > 0:
-            fig = px.pie(df[df['Остатки ККТ']>0], values='Остатки ККТ', names='Склад', hole=0.6)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Нет данных")
-
-    with col_r:
-        st.write("### 📈 Топ Городов")
-        if total_kkt > 0:
-            # Берем топ-10 по остаткам
-            top_10 = df.nlargest(10, 'Остатки ККТ')
-            fig_bar = px.bar(top_10, x='Склад', y='Остатки ККТ', color='Остатки ККТ', text_auto=True)
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-    # --- ТАБЛИЦА (EXCEL ВИД) ---
-    st.write("### 📋 Детальный реестр (Строки 1-80)")
-    st.dataframe(df, use_container_width=True, hide_index=True)
-
-else:
-    st.warning("Проверь доступ к таблице!")
+# --- ВКЛАДКА 2: ЛОГИСТИКА ---
+with tab2:
+    df2 = load_data(URL_LOGIC, skip=1149)
+    if not df2.empty:
+        st.subheader("🏢 Реестр отгрузок (Вид: Большой Excel)")
+        search = st.text_input("🔍 Поиск по серийнику или городу...")
+        if search:
+            df2 = df2[df2.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+        st.dataframe(df2, use_container_width=True)
+    else:
+        st.error("❌ Таблица логистики недоступна. Проверь доступ к ссылке!")
