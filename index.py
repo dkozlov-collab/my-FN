@@ -75,7 +75,7 @@ if not df_raw.empty:
 
     # --- ОСТАТКИ В СТРОКУ (ИТОГИ) ---
     st.markdown("<div class='total-line'>", unsafe_allow_html=True)
-    st.subheader("🏁 ИТОГО ОСТАЛОСЬ ПО ВЫБОРКЕ:")
+    st.subheader("🏁 ИТОГО ОСТАЛОСЬ:")
     
     # Все цифры в один ряд
     t1, t2, t3, t4 = st.columns(4)
@@ -86,7 +86,6 @@ if not df_raw.empty:
     with t3:
         st.metric("ФН-36", f"{df[c_fn36].sum() if c_fn36 else 0} шт")
     with t4:
-        st.metric("SIM", f"{df[c_sim].sum() if c_sim else 0} шт")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # --- КРУГЛЫЙ ГРАФИК ---
