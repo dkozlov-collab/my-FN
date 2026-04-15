@@ -2,26 +2,55 @@ import streamlit as st
 import pandas as pd
 import re
 
-# --- 1. СТИЛЬ ---
-st.set_page_config(layout="wide", page_title="RBS TOTAL DATA")
+# --- 1. НАСТРОЙКА БЕЗОПАСНОСТИ И ИНТЕРФЕЙСА ---
+st.set_page_config(layout="wide", page_title="RBS SECURE ACCESS")
 
+# Стили (Светлая тема)
 st.markdown("""
 <style>
     .stApp { background-color: #FFFFFF; }
     [data-testid="stMetricValue"] { color: #1A237E !important; font-size: 32px !important; font-weight: 800; }
-    [data-testid="metric-container"] { border: 1px solid #DEE2E6; border-radius: 8px; padding: 15px; background-color: #F8F9FA; }
-    .main-header { font-size: 28px; font-weight: 800; color: #1A237E; text-align: center; margin-bottom: 20px; }
-    h3 { color: #1A237E; border-bottom: 2px solid #1A237E; padding-bottom: 5px; }
+    .main-header { font-size: 24px; font-weight: 800; color: #1A237E; text-align: center; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ЗАГРУЗКА ---
+# --- БАЗА ПОЛЬЗОВАТЕЛЕЙ (РУЧНАЯ НАСТРОЙКА) ---
+# Логин : {пароль, фильтр_имени_партнера}
+USER_DB = {
+    "admin": {"pass": "admin777", "partner": "ALL"},
+    "ab1": {"pass": "ab2026", "partner": "AB"},
+    "atml": {"pass": "atmgo", "partner": "ATM"},
+    "bank": {"pass": "bank99", "partner": "BANK"}
+}
+
+# --- ФУНКЦИЯ ВХОДА ---
+def login():
+    if "auth" not in st.session_state:
+        st.session_state.auth = False
+
+    if not st.session_state.auth:
+        st.markdown("<h1 style='text-align: center;'>🔐 ВХОД В СИСТЕМУ RBS</h1>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1,1,1])
+        with col2:
+            user = st.text_input("Логин")
+            pw = st.text_input("Пароль", type="password")
+            if st.button("Войти"):
+                if user in USER_DB and USER_DB[user]["pass"] == pw:
+                    st.session_state.auth = True
+                    st.session_state.user_role = USER_DB[user]["partner"]
+                    st.rerun()
+                else:
+                    st.error("Неверный логин или пароль")
+        st.stop()
+
+login()
+
+# --- 2. ЗАГРУЗКА ДАННЫХ ---
 S_URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
 def to_n(v):
     try:
-        if isinstance(v, (int, float)): return float(v)
         n = re.findall(r'\d+', str(v).replace(' ',''))
         return float(n[0]) if n else 0.0
     except: return 0.0
@@ -36,60 +65,52 @@ def load_data():
 
 df_s_raw, df_l_raw = load_data()
 
-# --- 3. ФИЛЬТРЫ ---
-st.sidebar.header("⚙️ ГЛОБАЛЬНЫЙ ФИЛЬТР")
-p_list = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
-sel_p = st.sidebar.multiselect("Выберите партнеров:", [x for x in p_list if x not in ["", "0", "0.0"]])
+# --- 3. АВТО-ФИЛЬТРАЦИЯ ПО РОЛИ ---
+role = st.session_state.user_role
 
-df_s = df_s_raw.copy()
-df_l = df_l_raw.copy()
-
-if sel_p:
-    df_s = df_s[df_s.iloc[:, 1].astype(str).isin(sel_p)]
-    df_l = df_l[df_l.iloc[:, 1].astype(str).isin(sel_p)]
+if role == "ALL":
+    # Админ видит всё + может фильтровать вручную
+    st.sidebar.success("Вы зашли как АДМИНИСТРАТОР")
+    p_list = sorted(list(set(df_s_raw.iloc[:, 1].astype(str))))
+    sel_p = st.sidebar.multiselect("Фильтр партнеров:", p_list)
+    df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_s_raw
+    df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).isin(sel_p)] if sel_p else df_l_raw
+else:
+    # Обычный партнер видит ТОЛЬКО свои данные (фильтр по части имени)
+    st.sidebar.info(f"Доступ: {role}")
+    df_s = df_s_raw[df_s_raw.iloc[:, 1].astype(str).str.contains(role, case=False)]
+    df_l = df_l_raw[df_l_raw.iloc[:, 1].astype(str).str.contains(role, case=False)]
 
 # --- 4. ВКЛАДКИ ---
-st.markdown("<div class='main-header'>RBS: ЦИФРОВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ</div>", unsafe_allow_html=True)
-tab_a, tab_s, tab_l = st.tabs(["🔢 АНАЛИТИКА ПО СТОЛБЦАМ", "📦 ВЕСЬ СКЛАД", "🚚 ЛОГИСТИКА"])
+st.markdown(f"<div class='main-header'>ПАНЕЛЬ УПРАВЛЕНИЯ: {role}</div>", unsafe_allow_html=True)
+tab_a, tab_s, tab_l = st.tabs(["🔢 АНАЛИТИКА ЦИФРЫ", "📦 СКЛАД ОСТАТКИ", "🚚 ЛОГИСТИКА"])
 
 with tab_a:
-    st.write("### 📈 ИТОГИ ПО СКЛАДАМ И ПАРТНЕРАМ")
-    
-    # Краткие метрики
+    st.write("### 📈 ИТОГИ ПО СТОЛБЦАМ")
     c1, c2, c3 = st.columns(3)
-    kkt_total = df_s.iloc[:, 5].apply(to_n).sum()
-    fn_total = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
-    money_total = df_l.iloc[:, 11].apply(to_n).sum()
+    kkt = df_s.iloc[:, 5].apply(to_n).sum()
+    fn = df_s.iloc[:, 6].apply(to_n).sum() + df_s.iloc[:, 7].apply(to_n).sum()
+    money = df_l.iloc[:, 11].apply(to_n).sum()
     
-    c1.metric("ККТ ВСЕГО", f"{int(kkt_total)} шт")
-    c2.metric("ФН ВСЕГО", f"{int(fn_total)} шт")
-    c3.metric("ЛОГИСТИКА", f"{int(money_total):,} ₽".replace(",", " "))
+    c1.metric("ККТ", f"{int(kkt)} шт")
+    c2.metric("ФН", f"{int(fn)} шт")
+    c3.metric("ЛОГИСТИКА", f"{int(money):,} ₽".replace(",", " "))
 
     st.divider()
-    
-    st.write("### 📊 ЦИФРЫ ПО ВСЕМ СТОЛБЦАМ СКЛАДА")
-    # Создаем сводную таблицу: Партнер (1-й столб) и суммы по всем числовым столбцам (с 5-го по 80-й)
-    if not df_s.empty:
-        # Оставляем только нужные столбцы для анализа (Партнер + данные)
-        cols_to_sum = df_s.columns[5:80]
-        # Превращаем всё в числа для корректного сложения
-        df_num = df_s.copy()
-        for col in cols_to_sum:
-            df_num[col] = df_num[col].apply(to_n)
-            
-        # Группируем по партнеру
-        partner_col = df_s.columns[1]
-        summary_table = df_num.groupby(partner_col)[cols_to_sum].sum().reset_index()
-        
-        # Выводим кликабельную таблицу с итогами по каждому столбцу
-        st.data_editor(summary_table, use_container_width=True, hide_index=True)
-    else:
-        st.info("Нет данных для отображения")
-
-with tab_s:
-    st.write("### 📦 РЕЕСТР СКЛАДА (80 СТОЛБЦОВ)")
+    # Сводная таблица по всем 80 столбцам
+    cols_to_sum = df_s.columns[5:80]
+    df_num = df_s.copy()
+    for col in cols_to_sum: df_num[col] = df_num[col].apply(to_n)
+    summary = df_num.groupby(df_s.columns[1])[cols_to_sum].sum().reset_index()
+    st.write("#### Детальные остатки по позициям:")
+    st.data_editor(summary, use_container_width=True, hide_index=True)
+    with tab_s:
     st.data_editor(df_s, use_container_width=True, height=600, hide_index=True)
 
 with tab_l:
-    st.write("### 🚚 РЕЕСТР ЛОГИСТИКИ (5000 СТРОК)")
     st.data_editor(df_l, use_container_width=True, height=600, hide_index=True)
+
+if st.sidebar.button("Выйти"):
+    st.session_state.auth = False
+    st.rerun()
+    
