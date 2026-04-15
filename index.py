@@ -70,7 +70,6 @@ with t1:
     c2.metric("ФН ОСТАТОК", f"{int(fn)} шт")
     # Используем безопасную функцию fmt_money для вывода
     c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt_money(money)} ₽")
-    
     st.divider()
     col_a, col_b = st.columns(2)
     with col_a:
