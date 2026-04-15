@@ -37,4 +37,22 @@ try:
                 df = df[df['Тип рег'] == selected_type]
 
         # --- КАРТОЧКИ ---
-        col1, col2, col3 = st
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Всего записей", len(df))
+        
+        # Если есть колонка с городами/складами
+        if 'Склад' in df.columns:
+            col2.metric("Кол-во складов", df['Склад'].nunique())
+        
+        st.divider()
+
+        # --- ТАБЛИЦА ---
+        st.dataframe(df, use_container_width=True)
+        
+    else:
+        st.title("📊 Мониторинг ККТ и ФН")
+        st.info("Пожалуйста, введите пароль слева для доступа к данным.")
+
+except Exception as e:
+    st.error("Ошибка при загрузке данных.")
+    st.write(f"Убедитесь, что таблица доступна. Техническая инфо: {e}")
