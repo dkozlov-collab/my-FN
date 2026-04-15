@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Масштабная настройка под Pocophone (Белый дизайн)
+# Настройка под Pocophone (Белый массивный дизайн)
 st.set_page_config(page_title="RBS: Глобальный Массив", layout="wide")
 
 st.markdown("""
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ССЫЛКА (Дима, проверь, чтобы доступ в таблице был открыт!)
+# Ссылка на таблицу (которую ты скинул последней)
 URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
 def clean_num(val):
@@ -36,15 +36,14 @@ def load_data():
         # ЗАДАЧА: А:R до 80 строки
         df = pd.read_csv(URL).iloc[:80, :18].fillna(0)
         return df
-    except Exception as e:
-        return pd.DataFrame()
+    except: return pd.DataFrame()
 
 st.markdown("<h1>🏛️ RBS: ЦЕНТР УПРАВЛЕНИЯ СТРУКТУРОЙ</h1>", unsafe_allow_html=True)
 
 df_raw = load_data()
 
 if not df_raw.empty:
-    # 1. ПОИСК КОЛОНОК (Решает KeyError)
+    # Динамический поиск всех нужных нам колонок
     c_sp    = find_col(df_raw, ['партнер', 'сервис'])
     c_city  = find_col(df_raw, ['склад', 'город'])
     c_kkt   = find_col(df_raw, ['ккт', 'наличие'])
@@ -56,17 +55,20 @@ if not df_raw.empty:
     for col in [c_kkt, c_spent, c_money]:
         if col: df_raw[col] = df_raw[col].apply(clean_num)
 
-    # 2. ФИЛЬТРЫ (Защита от TypeError в сортировке)
-    st.write("### 🔍 Глобальная фильтрация")
+    # --- ПУЛЬТ УПРАВЛЕНИЯ (ФИЛЬТРЫ) ---
+    st.write("### 🔍 Глобальная фильтрация массива")
     f1, f2, f3 = st.columns(3)
     
     with f1:
+        # Фильтр по Партнерам (превращаем в текст, чтобы не было TypeError)
         sp_list = sorted([str(x) for x in df_raw[c_sp].unique() if str(x) not in ['0', '']]) if c_sp else []
         sel_sp = st.multiselect("Сервис-Партнер", sp_list)
     with f2:
+        # Фильтр по Городам
         city_list = sorted([str(x) for x in df_raw[c_city].unique() if str(x) not in ['0', '']]) if c_city else []
         sel_city = st.multiselect("Город / Склад", city_list)
     with f3:
+        # Фильтр по типу выезда
         exit_list = sorted([str(x) for x in df_raw[c_exit].unique() if str(x) not in ['0', '']]) if c_exit else []
         sel_exit = st.multiselect("Тип выезда", exit_list)
 
@@ -76,14 +78,14 @@ if not df_raw.empty:
     if sel_city: df = df[df[c_city].astype(str).isin(sel_city)]
     if sel_exit: df = df[df[c_exit].astype(str).isin(sel_exit)]
 
-    # 3. ИТОГИ (МЕТРИКИ)
+    # --- ГЛАВНЫЕ ЗАГОЛОВКИ (ИТОГИ) ---
     st.divider()
     m1, m2, m3 = st.columns(3)
     m1.metric("РАСХОД ФН (ИТОГО)", f"{df[c_spent].sum() if c_spent else 0} шт")
     m2.metric("ДЕНЕЖНЫЙ МАССИВ", f"{df[c_money].sum() if c_money else 0:,.0f} ₽".replace(',', ' '))
     m3.metric("ОСТАТОК ККТ", f"{df[c_kkt].sum() if c_kkt else 0} шт")
 
-    # 4. ГРАФИКИ-БУБЛИКИ
+    # --- КРУГЛЫЕ ГРАФИКИ (БУБЛИКИ) ---
     st.divider()
     g1, g2 = st.columns(2)
     with g1:
@@ -96,9 +98,9 @@ if not df_raw.empty:
             fig_kkt = px.pie(df[df[c_kkt]>0], values=c_kkt, names=c_city if c_city else c_sp, 
                              hole=0.5, title="🟢 Доли остатков ККТ")
             st.plotly_chart(fig_kkt, use_container_width=True)
-
-    # 5. ТАБЛИЦА МАССИВА
+            # --- ТАБЛИЦА МАССИВА ---
     st.write("### 📋 Полный реестр (A:R)")
     st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
+
+else:
     st.error("Система не видит данные. Дима, проверь доступ 'Все, у кого есть ссылка' в таблице!")
