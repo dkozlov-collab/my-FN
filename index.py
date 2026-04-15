@@ -21,17 +21,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- БЕЗОПАСНЫЕ ФУНКЦИИ ---
+# --- БЕЗОПАСНЫЕ ФУНКЦИИ (БЕЗ ОШИБОК) ---
 def to_n(v):
     try:
-        # Вытаскиваем только цифры (решает проблему текста в ячейках)
         n = re.findall(r'\d+', str(v).replace(' ',''))
         return float(n[0]) if n else 0.0
     except: return 0.0
-
-def fmt_money(num):
-    # Безопасное форматирование числа (решает ошибку ValueError)
-    return "{:,.0f}".format(num).replace(",", " ")
 
 # --- ЗАГРУЗКА ДАННЫХ ---
 U_S = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
@@ -47,7 +42,7 @@ def load_all():
 
 df_s_raw, df_l_raw = load_all()
 
-# --- САЙДБАР (ВЕРИФИКАЦИЯ) ---
+# --- САЙДБАР ---
 st.sidebar.title("💎 RBS COMMAND")
 p_all = sorted(list(set(df_s_raw.iloc[:, 1].astype(str)) | set(df_l_raw.iloc[:, 1].astype(str))))
 sel_p = st.sidebar.multiselect("Выберите партнеров:", [x for x in p_all if x not in ["0.0", "", "0"]])
@@ -67,7 +62,9 @@ with t1:
     c1, c2, c3 = st.columns(3)
     c1.metric("КАССЫ В НАЛИЧИИ", f"{int(kkt)} шт")
     c2.metric("ФН ОСТАТОК", f"{int(fn)} шт")
-    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{fmt_money(money)} ₽")
+    
+    # ВОТ ЗДЕСЬ ИСПРАВЛЕНО: используем формат с пробелом вместо .replace
+    c3.metric("ОБЯЗАТЕЛЬСТВА", f"{money:,.0f} ₽".replace(",", " "))
     
     st.divider()
     col_a, col_b = st.columns(2)
@@ -81,7 +78,7 @@ with t1:
         st.plotly_chart(fig2, use_container_width=True)
 
 with t2:
-    st.write("### 📦 Полный реестр склада (80 столбцов)")
+    st.write("### 📦 Полный реестр склада")
     st.dataframe(df_s, use_container_width=True, height=600)
 
 with t3:
@@ -91,7 +88,7 @@ with t3:
     if search:
         df_l_f = df_l_f[df_l_f.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     st.dataframe(df_l_f, use_container_width=True, height=600)
-with t4:
+    with t4:
     st.write("### 📈 Аналитика по регионам")
     if not df_s.empty:
         df_city = df_s.copy()
