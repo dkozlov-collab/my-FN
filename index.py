@@ -1,53 +1,54 @@
 import streamlit as st
 import pandas as pd
 
-# Настройка широкого экрана
-st.set_page_config(page_title="RBS: Логистика Excel-вид", layout="wide", page_icon="🚚")
+# Настройка широкого экрана (Excel-style)
+st.set_page_config(page_title="RBS: Логистика 1150+", layout="wide", page_icon="🚚")
 
-# Ссылка на твою вторую таблицу
-URL_LOGIC = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
+# Ссылка на таблицу
+URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
 
-@st.cache_data(ttl=10)
-def load_logistics():
+@st.cache_data(ttl=15)
+def load_logistics_1150():
     try:
-        # Читаем данные, пропуская всё до нужной нам части (150 строка)
-        df_all = pd.read_csv(URL_LOGIC).fillna("")
-        if len(df_all) > 149:
-            # Забираем данные со 150 строки и до конца
-            df = df_all.iloc[149:].copy()
-            # Убираем полностью пустые строки
-            df = df[df.astype(str).apply(lambda x: x.str.strip()).ne("").any(axis=1)]
-            return df
-        return pd.DataFrame()
+        # Читаем всю таблицу
+        full_df = pd.read_csv(URL).fillna("")
+        
+        # Забираем данные начиная со строки 1150 (в Python индекс 1149)
+        if len(full_df) >= 1150:
+            df_logic = full_df.iloc[1149:].copy()
+            # Убираем пустые строки, чтобы не мусорить
+            df_logic = df_logic[df_logic.astype(str).apply(lambda x: x.str.strip()).ne("").any(axis=1)]
+            return df_logic
+        else:
+            return pd.DataFrame(columns=["Статус"], data=[["Строка 1150 еще не заполнена"]])
     except Exception as e:
-        st.error(f"Ошибка загрузки: {e}")
+        st.error(f"Ошибка чтения таблицы: {e}")
         return pd.DataFrame()
 
-# Заголовок
-st.markdown("<h2 style='color: #00E5FF;'>🚚 РЕЕСТР ОТГРУЗОК (Вид: Таблица Excel)</h2>", unsafe_allow_html=True)
+# ЗАГОЛОВОК
+st.markdown("<h2 style='color: #00E5FF;'>🚚 РЕЕСТР ЛОГИСТИКИ (Строки 1150+)</h2>", unsafe_allow_html=True)
 
-df_log = load_logistics()
+df = load_logistics_1150()
 
-if not df_log.empty:
-    # Панель поиска сверху
-    search_query = st.text_input("🔍 Быстрый фильтр по серийным номерам или городам:", placeholder="Введите номер или город...")
+if not df.empty:
+    # Поиск прямо над таблицей
+    search = st.text_input("🔍 Быстрый поиск по серийнику, городу или статусу 'В ПУТИ'...")
     
-    if search_query:
-        # Фильтрация по всем колонкам одновременно
-        df_log = df_log[df_log.apply(lambda r: r.astype(str).str.contains(search_query, case=False).any(), axis=1)]
+    if search:
+        # Фильтруем по всем колонкам
+        mask = df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
+        df = df[mask]
 
-    # Вывод данных в виде компактной таблицы
-    # Используем st.dataframe для "Excel-вида" с возможностью сортировки
+    # ВЫВОД В ВИДЕ ТАБЛИЦЫ (Excel-вид)
+    # Используем st.dataframe — это самый компактный вид
     st.dataframe(
-        df_log, 
+        df, 
         use_container_width=True, 
-        height=600, # Высота окна с данными
-        hide_index=True # Скрываем технические номера строк Python
+        height=800, # Делаем таблицу высокой, чтобы видеть много строк
+        hide_index=True
     )
     
-    # Счетчик для контроля
-    st.caption(f"Найдено записей: {len(df_log)}")
+    st.caption(f"Показано строк из раздела логистики: {len(df)}")
 
 else:
-    st.warning("На 150-й строке данных не обнаружено. Проверь таблицу!")
-    st.info("Убедись, что доступ к таблице открыт: 'Все, у кого есть ссылка'.")
+    st.warning("Данные на строке 1150 и ниже не найдены. Проверь таблицу!")
