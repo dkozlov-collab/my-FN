@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
-from auth_logic import login_system  # Твой замок
+from auth_logic import login_system
 
-# 1. ЗАПУСКАЕМ ПРОВЕРКУ (Окно входа)
+# 1. НАСТРОЙКИ СТРАНИЦЫ (Должны быть строго первыми!)
+st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+
+# 2. ПРОВЕРКА ПИН-КОДА
 is_auth, user_login, user_filter = login_system()
 
-# 2. ВСЁ ЧТО НИЖЕ — ПОД ЗАМКОМ
 if is_auth:
-    # --- НАСТРОЙКИ СТРАНИЦЫ ---
-    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
-    
+    # --- СТИЛИ ОФОРМЛЕНИЯ ---
     st.markdown("""
     <style>
         .stApp { background-color: #F8FAFC; }
@@ -41,53 +41,66 @@ if is_auth:
     
     df_raw = load_data()
 
-    # --- БОКОВАЯ ПАНЕЛЬ ---
+    # --- БОКОВАЯ ПАНЕЛЬ И ФИЛЬТРЫ ---
     with st.sidebar:
         st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
-        st.success(f"Пользователь: {user_login}")
+        st.success(f"Вход выполнен")
         st.divider()
         
-        # ЛОГИКА ФИЛЬТРА: Админ выбирает всех, партнер видит только своё
+        # Если зашел АДМИН (user_filter == "Все")
         if user_filter == "Все":
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
         else:
+            # Если партнер - фиксируем его компанию
             sel_org = user_filter
-            st.info(f"Доступ только к: {sel_org}")
+            st.info(f"Организация: {sel_org}")
+            
+        city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+        sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
 
         if st.button("Выйти"):
             st.session_state["authenticated"] = False
             st.rerun()
 
-    # --- ОБРАБОТКА ДАННЫХ ---
+    # --- ОБРАБОТКА И ВЫВОД РЕЕСТРА ---
     df_f = df_raw.iloc[::-1].copy() # Новые сверху
     
-    # Применяем фильтр организации (Столбец C - индекс 2)
-    if sel_org != "Все":
-        df_f = df_f[df_f.iloc[:, 2].astype(str).str.contains(sel_org, na=False)]
+    if not df_f.empty:
+        if sel_org != "Все": 
+            df_f = df_f[df_f.iloc[:, 2].astype(str).str.contains(sel_org, na=False)]
+        if sel_city != "Все": 
+            df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
 
-    # --- ВЫВОД РЕЕСТРА ---
     st.markdown(f"### 🚚 Реестр отгрузок: {sel_org}")
 
     if df_f.empty:
         st.info("Данные не найдены")
     else:
         for i, (idx, row) in enumerate(df_f.reset_index(drop=True).iterrows()):
-            # Столбцы: M(12)-Дата, C(2)-Орг, B(1)-Город, K(13)-Трек, H(7)-Состав, O(14)-Перемещение
-            header = f"{row.iloc[12]} | {row.iloc[2]} ({row.iloc[1]})"
+            # Вытягиваем данные по столбцам
+            date_val = str(row.iloc[12])
+            org_name = str(row.iloc[2])
+            city_val = str(row.iloc[1])
+            content = str(row.iloc[7])
+            ttn_val = str(row.iloc[13])
+            move_val = str(row.iloc[14])
+
+            header = f"{date_val} | {org_name} ({city_val})"
             
             with st.expander(header):
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    st.markdown("<span class='info-label'>🛠 Состав:</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='sn-block'>{row.iloc[7]}</div>", unsafe_allow_html=True)
+                    st.markdown("<span class='info-label'>🛠 Компоненты:</span>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
                 with col2:
-                    st.markdown("<span class='info-label'>📄 Перемещение:</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='move-number'>{row.iloc[14]}</div>", unsafe_allow_html=True)
+                    st.markdown("<span class='info-label'>📄 Номер перемещения:</span>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
                     
                     st.divider()
-                    ttn_val = str(row.iloc[13])
+                    st.markdown("<span class='info-label'>🚚 Трек-номер:</span>", unsafe_allow_html=True)
                     if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ</a>', unsafe_allow_html=True)
                     else:
                         st.code(ttn_val)
+                    
