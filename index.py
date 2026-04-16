@@ -103,3 +103,38 @@ else:
                 # Кнопка Excel
                 csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
                 st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
+
+
+import streamlit as st
+
+# --- БЛОК УПРАВЛЕНИЯ ПАРОЛЯМИ (5 ОРГАНИЗАЦИЙ) ---
+ACCESS_CONTROL = {
+    "admin": {"pass": "pay2026", "filter": "Все"},
+    "biz_auto": {"pass": "auto_7788", "filter": "Автоматизация Бизнеса"},
+    "ares": {"pass": "ares_comp_M", "filter": "АРЕС-КОМПАНИ-М"},
+    "atm": {"pass": "atm_alliance", "filter": "АТМ АЛЬЯНС СОЛЮШИНС"},
+    "br": {"pass": "br_solutions", "filter": "ООО БР"}  # Добавил ООО БР
+}
+
+def login_system():
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        st.markdown("<h2 style='text-align: center; color: #0052FF;'>🔐 Вход LIFE PAY</h2>", unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            u = st.text_input("Логин (название организации)")
+            p = st.text_input("Пароль", type="password")
+            if st.button("ВОЙТИ", use_container_width=True):
+                if u in ACCESS_CONTROL and ACCESS_CONTROL[u]["pass"] == p:
+                    st.session_state["authenticated"] = True
+                    st.session_state["user"] = u
+                    st.session_state["filter"] = ACCESS_CONTROL[u]["filter"]
+                    st.rerun()
+                else:
+                    st.error("Ошибка: Проверьте логин и пароль")
+        st.stop()
+    
+    return True, st.session_state["user"], st.session_state["filter"]
