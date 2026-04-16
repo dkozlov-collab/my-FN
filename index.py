@@ -74,7 +74,7 @@ else:
         date_val = str(row.iloc[12])  # M (Дата)
         org_val = str(row.iloc[2])   # C (Организация)
         city_val = str(row.iloc[1])  # B (Город)
-        ttn_val = str(row.iloc[10])   # K (Ссылка/Трек)
+        ttn_val = str(row.iloc[13])   # K (Ссылка/Трек)
         content = str(row.iloc[7])   # H (Компоненты)
         move_val = str(row.iloc[14])  # O (Номер перемещения)
         
