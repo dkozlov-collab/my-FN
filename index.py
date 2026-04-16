@@ -65,7 +65,15 @@ if not df_raw.empty:
 
 # --- 5. ВЫВОД СПИСКА ---
 st.markdown("### 🚚 Реестр отгрузок")
+import streamlit as st
+from auth_logic import login_system
 
+# Проверка входа
+if login_system():
+    st.sidebar.success(f"Вы вошли как: {st.session_state['user']}")
+    
+    # ТВОЙ КОД РЕЕСТРА ОТГРУЗОК ТУТ...
+    # (тот, что мы писали: загрузка таблицы, фильтр по st.session_state['filter'] и т.д.)
 if df_f.empty:
     st.info("Данные не найдены")
 else:
