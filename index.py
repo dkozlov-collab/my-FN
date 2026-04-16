@@ -1,13 +1,14 @@
- import streamlit as st
+import streamlit as st
 import pandas as pd
-from auth_logic import login_system
+from auth_logic import login_system  # Твой замок
 
-# 1. ЗАПУСКАЕМ ЗАМОК
+# 1. ЗАПУСКАЕМ ПРОВЕРКУ
 is_auth, user_login, user_filter = login_system()
 
-# 2. ПРОВЕРКА ВХОДА (Двоеточие обязательно!)
+# 2. ВСЁ ЧТО НИЖЕ — ПОД ЗАМКОМ
 if is_auth:
-    # Весь код ниже ИМЕЕТ ОТСТУП (4 пробела)
+    # ТУТ СТАВЬ СВОЙ СТАРЫЙ КОД (st.set_page_config и т.д.)
+    # ВАЖНО: Весь твой код должен иметь отступ (4 пробела слева)
     st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
     
     st.markdown("""
