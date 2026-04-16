@@ -134,26 +134,26 @@ with st.sidebar:
                         
                         csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
                         st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
-      else:
-          st.stop()
-    import streamlit as st
-    import pandas as pd
-        # ... другие импорты ...
-        
-        # ВСТАВЛЯТЬ СЮДА (в самое начало после импортов)
-    st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎")
-        
-    st.markdown(
-            """
-            <head>
-                <meta property="og:title" content="RBS GLOBAL ERP" />
-                <meta property="og:description" content="Система управления ресурсами" />
-                <meta property="og:image" content="https://raw.githubusercontent.com/streamlit/docs/main/public/images/streamlit_logo.png" />
-            </head>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        # ДАЛЬШЕ ИДЕТ ВАШ ОСТАЛЬНОЙ КОД
-    st.title("Добро пожаловать в систему")
-        # ... ваш код с кнопками, таблицами и т.д. ...
+                      else:
+                          st.stop()
+                import streamlit as st
+                import pandas as pd
+                    # ... другие импорты ...
+                    
+                    # ВСТАВЛЯТЬ СЮДА (в самое начало после импортов)
+                st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎")
+                    
+                st.markdown(
+                        """
+                        <head>
+                            <meta property="og:title" content="RBS GLOBAL ERP" />
+                            <meta property="og:description" content="Система управления ресурсами" />
+                            <meta property="og:image" content="https://raw.githubusercontent.com/streamlit/docs/main/public/images/streamlit_logo.png" />
+                        </head>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # ДАЛЬШЕ ИДЕТ ВАШ ОСТАЛЬНОЙ КОД
+                st.title("Добро пожаловать в систему")
+                    # ... ваш код с кнопками, таблицами и т.д. ...
