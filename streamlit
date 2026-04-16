@@ -1,4 +1,3 @@
-# .streamlit/secrets.toml
 [passwords]
 admin = "pay2026"
 biz_auto = "auto_7788"
