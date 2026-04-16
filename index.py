@@ -105,7 +105,7 @@ if is_auth:
             date_val = str(row.iloc[12])  
             org_val  = str(row.iloc[2])   
             city_val = str(row.iloc[1])   
-           ttn_val = str(row.iloc[13])  # ТУТ ИСПРАВИЛ НА iloc
+        ttn_val = str(row.iloc[13])  # ТУТ ИСПРАВИЛ НА iloc
         raw_content = str(row.iloc[7])
         content = raw_content.split(',')[0].strip() # ТУТ ДОБАВИЛ ОЧИСТКУ
         move_val = str(row.iloc[14])
