@@ -1,17 +1,22 @@
-    import streamlit as st
-    import pandas as pd
-    from auth_logic import login_system
+ import streamlit as st
+import pandas as pd
+from auth_logic import login_system
+
+# 1. ЗАПУСКАЕМ ЗАМОК
+is_auth, user_login, user_filter = login_system()
+
+# 2. ПРОВЕРКА ВХОДА (Двоеточие обязательно!)
+if is_auth:
+    # Весь код ниже ИМЕЕТ ОТСТУП (4 пробела)
+    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
     
-    # 1. ЗАПУСКАЕМ ЗАМОК
-    is_auth, user_login, user_filter = login_system()
-    
-    # 2. ЕСЛИ ВХОД УСПЕШЕН (обязательно ставим двоеточие в конце!)
-    if is_auth:
-        # ВАЖНО: Весь код ниже должен быть сдвинут ВПРАВО (на 4 пробела или 1 Tab)
-        # Если он не сдвинут, Python думает, что защита к нему не относится.
-         st.set_page_config(layout="wide", page_title="LIFE PAY | ERP")
-        # ... тут идут твои стили, загрузка данных и карточки ...
-        # УБЕДИСЬ, что каждая строчка ниже имеет отступ от края!
+    st.markdown("""
+    <style>
+        .stApp { background-color: #F8FAFC; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Дальше идет твой код загрузки данных (тоже с отступом!)
     # --- 1. СТИЛЬ МИНИМАЛИЗМА LIFE PAY ---
             st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
     st.markdown("""
