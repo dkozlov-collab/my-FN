@@ -80,4 +80,22 @@ else:
         content = str(row.iloc[7])
         
         # ЗАГОЛОВОК КАРТОЧКИ (Сжатый вид)
-        label = f"{date_val}  |  {org
+        label = f"{date_val}  |  {org_val}  ({city_val})"
+        
+        with st.expander(label):
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.markdown("<span class='sub-text'>📦 Состав и Серийные номера:</span>", unsafe_allow_html=True)
+                st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("<span class='sub-text'>🔗 Документы:</span>", unsafe_allow_html=True)
+                if "http" in ttn_val:
+                    st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-btn">ОТСЛЕДИТЬ ТТН</a>', unsafe_allow_html=True)
+                else:
+                    st.info(f"ТТН: {ttn_val}")
+                
+                # Кнопка Excel только для этой строки
+                csv = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+                st.download_button("📥 Скачать Excel", csv, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
