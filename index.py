@@ -63,11 +63,17 @@ if is_auth:
             st.write(f"👤 Пользователь: {user_login}")
             st.divider()
             
-            if not df_raw.empty:
-                org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-               # Если пользователь не администратор, убираем вариант "Все"
-        if user_filter != "Все":
-            sel_org = st.selectbox("🏢 Организация:", org_list)
+            f not df_raw.empty:
+            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+            
+            # --- ИСПРАВЛЕННАЯ ЛОГИКА ТУТ ---
+            if user_filter != "Все":
+                # Если не админ, показываем только его компанию (без "Все")
+                sel_org = st.selectbox("🏢 Организация:", org_list)
+            else:
+                # Если админ, добавляем вариант "Все"
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            # -------------------------------
         else:
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
             city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
