@@ -66,11 +66,11 @@ if is_auth:
 
     df_raw = load_data()
 
-    # --- 5. ФИЛЬТР ПО ПРАВАМ (ИЗ ПИН-КОДА) ---
+   # ПРИМЕНЯЕМ СКРЫТЫЙ ФИЛЬТР (ИЗ ПИН-КОДА)
     if not df_raw.empty and user_filter != "Все":
-        # Скрываем всё, кроме организации пользователя (Столбец C / индекс 2)
-        df_raw = df_raw[df_raw.iloc[:, 2].astype(str).str.contains(user_filter, na=False)]
-
+        # Делаем поиск по части слова, не обращая внимания на большие/маленькие буквы
+        mask = df_raw.iloc[:, 2].astype(str).str.contains(user_filter, case=False, na=False)
+        df_raw = df_raw[mask]
     # --- 6. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
         st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
