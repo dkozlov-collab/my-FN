@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 2. ЗАГРУЗКА ДАННЫХ (БЕЗОПАСНАЯ) ---
-L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/edit?usp=sharing"
+L_URL ="https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/edit?usp=sharing"
 
 @st.cache_data(ttl=5)
 def get_data():
