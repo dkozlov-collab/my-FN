@@ -1,6 +1,13 @@
 import streamlit as st
 import pandas as pd
+from auth_logic import login_system  # Подключаем наш внешний файл с логикой
 
+# Запускаем проверку входа. Внутри этой функции пароли берутся из secrets.toml
+is_auth, user_login, user_filter = login_system()
+
+# ЕСЛИ ВХОД ВЫПОЛНЕН, ПОКАЗЫВАЕМ ВСЁ ОСТАЛЬНОЕ
+if is_auth:
+    # Здесь начинается твой основной код...
 # --- 1. СТИЛЬ МИНИМАЛИЗМА LIFE PAY ---
 st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
 
