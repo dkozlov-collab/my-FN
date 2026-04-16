@@ -9,14 +9,11 @@
     if is_auth:
         # ВАЖНО: Весь код ниже должен быть сдвинут ВПРАВО (на 4 пробела или 1 Tab)
         # Если он не сдвинут, Python думает, что защита к нему не относится.
-        
-             st.set_page_config(layout="wide", page_title="LIFE PAY | ERP")
-        
+         st.set_page_config(layout="wide", page_title="LIFE PAY | ERP")
         # ... тут идут твои стили, загрузка данных и карточки ...
         # УБЕДИСЬ, что каждая строчка ниже имеет отступ от края!
     # --- 1. СТИЛЬ МИНИМАЛИЗМА LIFE PAY ---
             st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
-    
     st.markdown("""
     <style>
         .stApp { background-color: #F8FAFC; }
