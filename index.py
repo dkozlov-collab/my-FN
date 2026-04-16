@@ -57,26 +57,26 @@ if is_auth:
             mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
             df_raw = df_raw[mask]
     
-   # --- 5. БОКОВАЯ ПАНЕЛЬ (ТОЛЬКО ФИЛЬТРЫ) ---
-with st.sidebar:
+  # 60 строка
+with st.sidebar:  # <-- ДОБАВЬ ЭТУ СТРОКУ
     st.markdown("<h2 style='color:#0052FF'>ФИЛЬТРЫ</h2>", unsafe_allow_html=True)
     st.write(f"👤 Пользователь: {user_login}")
     st.divider()
 
     if not df_raw.empty:
         org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-        
-        # Фильтр организации
         if user_filter != "Все":
             user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
             sel_org = st.selectbox("🏢 Организация:", user_orgs)
         else:
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-            
-        # Фильтр города
+
         city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
         sel_city = st.selectbox("📍 Город:", ["Все"] + city_list)
-    
+
+# 80 строка (ПРИЖАТА К ЛЕВОМУ КРАЮ, без пробелов)
+# --- 6. ПОДГОТОВКА СПИСКА ---
+st.markdown("### 🚚 Реестр отгрузок")
         # --- 6. ПОДГОТОВКА СПИСКА ---
         df_f = df_raw.iloc[::-1].copy()
         if not df_raw.empty:
