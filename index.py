@@ -86,7 +86,7 @@ if not df_raw.empty:
         # --- 7. ВЫВОД РЕЕСТРА ---
 st.markdown("### 🚚 Реестр отгрузок")
         
-        if df_f.empty:
+if df_f.empty:
             st.info("Данные не найдены")
         else:
             for idx, row in df_f.reset_index(drop=True).iterrows():
