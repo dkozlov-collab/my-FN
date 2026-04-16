@@ -141,3 +141,19 @@ if is_auth:
             df = df[df.iloc[:, 2].astype(str).str.contains(user_filter, na=False)]
         
         # Далее выводим красивые строки отгрузок...
+# --- ЭТО В САМЫЙ НИЗ index.py ---
+    st.divider() # Рисуем разделительную линию
+    st.markdown("### 🏬 Складской учет (Остатки)")
+    
+    # Создаем три колонки для ключевых показателей
+    col_sklad1, col_sklad2, col_sklad3 = st.columns(3)
+    
+    with col_sklad1:
+        st.metric(label="Кассы в наличии", value="12 шт.") # Тут можно подтянуть данные из таблицы
+    with col_sklad2:
+        st.metric(label="ФН 15/36", value="45 шт.")
+    with col_sklad3:
+        st.metric(label="Сканеры/Эквайринг", value="8 шт.")
+
+    # Можно вывести краткую таблицу по складу
+    st.info("💡 Актуально на сегодня. Для заказа оборудования пишите в чат поддержки.")
