@@ -17,9 +17,12 @@ PIN_DB = {
 if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
+# Если вход еще НЕ выполнен
 if not st.session_state["auth"]:
     st.markdown("<h2 style='text-align: center;'>🔐 Реестр отгрузок | Вход</h2>", unsafe_allow_html=True)
+    
     pin = st.text_input("Введите ваш ПИН-КОД", type="password", placeholder="****")
+    
     if st.button("Войти"):
         if pin in PIN_DB:
             st.session_state["auth"] = True
@@ -27,9 +30,9 @@ if not st.session_state["auth"]:
             st.rerun()
         else:
             st.error("Неверный ПИН-код")
+    
+    # СТОП должен быть ЗДЕСЬ (внутри блока if, в самом конце)
     st.stop()
-
-# --- 3. ЕСЛИ ВХОД УСПЕШЕН — ПОКАЗЫВАЕМ РЕЕСТР ---
 user_filter = st.session_state["user_filter"]
 
 st.markdown("""
