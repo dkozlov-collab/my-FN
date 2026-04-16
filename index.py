@@ -5,7 +5,7 @@ from auth_logic import login_system
     # --- 1. ПРОВЕРКА АВТОРИЗАЦИИ (ЗАМОК) ---
 is_auth, user_login, user_filter = login_system()
     
-    if is_auth:
+if is_auth:
         # Настройка страницы
         st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
         
