@@ -65,15 +65,19 @@ if is_auth:
             
             f not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+        if not df_raw.empty:
+            # Получаем список всех уникальных организаций из таблицы
+            all_orgs = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
-            # --- ИСПРАВЛЕННАЯ ЛОГИКА ТУТ ---
+            # --- ЛОГИКА РАЗДЕЛЕНИЯ ДОСТУПА ---
             if user_filter != "Все":
-                # Если не админ, показываем только его компанию (без "Все")
-                sel_org = st.selectbox("🏢 Организация:", org_list)
+                # ОБЫЧНЫЙ ПОЛЬЗОВАТЕЛЬ: видит только свою компанию
+                # Фильтруем список так, чтобы в нем осталась только его организация
+                user_org_list = [org for org in all_orgs if user_filter.lower() in org.lower()]
+                sel_org = st.selectbox("🏢 Организация:", user_org_list)
             else:
-                # Если админ, добавляем вариант "Все"
-                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-            # -------------------------------
+                # АДМИН: видит всё и может выбрать "Все"
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + all_orgs)
         else:
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
             city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
