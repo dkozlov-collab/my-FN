@@ -111,7 +111,7 @@ for i, (idx, row) in enumerate(df_f.iterrows()):
         </div>
         """, unsafe_allow_html=True)
         
-        with st.expander("📁 Детали"):
+    with st.expander("📁 Детали"):
             st.write(f"Состав: {row.iloc[7] if df_all.shape[1] > 7 else '---'}")
             row_csv = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
             st.download_button("📥 Excel", row_csv, f"row_{idx}.csv", "text/csv", key=f"btn_{idx}")
