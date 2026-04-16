@@ -62,8 +62,7 @@ if is_auth:
             st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
             st.write(f"👤 Пользователь: {user_login}")
             st.divider()
-            
-            f not df_raw.empty:
+        f not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
         if not df_raw.empty:
             # Получаем список всех уникальных организаций из таблицы
