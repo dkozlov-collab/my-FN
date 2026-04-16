@@ -37,4 +37,8 @@ def login_system():
                     st.error("❌ Пользователь не найден")
         st.stop()
     
-    return True, st.session_state["user"], st.session_state["filter"]
+      return True,
+st.session_state["user"], 
+st.session_state["filter"]
+    
+    
