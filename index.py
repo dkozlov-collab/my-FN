@@ -111,3 +111,17 @@ else:
                 # Кнопка Excel
                 csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
                 st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
+                from auth_logic import login_system
+
+is_auth, user_login, user_filter = login_system()
+
+if is_auth:
+    # Загружаем таблицу...
+    df = load_data() 
+    
+    # ПРИМЕНЯЕМ СКРЫТЫЙ ФИЛЬТР
+    if user_filter != "Все":
+        # Показываем только строки этой организации (столбец C - индекс 2)
+        df = df[df.iloc[:, 2].astype(str).str.contains(user_filter, na=False)]
+    
+    # Далее выводим красивые строки отгрузок...
