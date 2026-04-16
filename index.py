@@ -70,8 +70,8 @@ if is_auth:
             sel_org = st.selectbox("🏢 Организация:", org_list)
         else:
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-                city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-                sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
+            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+            sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
     
         # --- 6. ПОДГОТОВКА СПИСКА ---
         df_f = df_raw.iloc[::-1].copy()
