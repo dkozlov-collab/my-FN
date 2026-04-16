@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-# 1. НАСТРОЙКИ (СТРОГО ПЕРВЫЕ)
-st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+# 1. НАСТРОЙКИ СТРАНИЦЫ
+st.set_page_config(layout="wide", page_title="LIFE PAY | Реестр", page_icon="🔵")
 
-# 2. ТВОЙ НОВЫЙ ЗНАЧОК
+# ЛОГОТИП
 LOGO_URL = "https://raw.githubusercontent.com/dkozlov-collab/my-FN/main/1000026659.jpg"
 
-# 3. ПИН-КОДЫ
+# 2. БАЗА ПИН-КОДОВ
 PIN_DB = {
     "1234": "Все",
     "7788": "Автоматизация Бизнеса",
@@ -16,12 +16,12 @@ PIN_DB = {
     "9900": "ООО БР"
 }
 
-# МЕНЯЕМ КЛЮЧ НА 'ultra_secure_login' — это сбросит кэш у всех!
-if "ultra_secure_login" not in st.session_state:
-    st.session_state["ultra_secure_login"] = False
+# Ключ сессии (изменил на 'v3_auth', чтобы сбросить старые входы)
+if "v3_auth" not in st.session_state:
+    st.session_state["v3_auth"] = False
 
-# --- ОКНО ВХОДА ---
-if not st.session_state["ultra_secure_login"]:
+# --- БЛОК ВХОДА ---
+if not st.session_state["v3_auth"]:
     _, col_center, _ = st.columns([1, 1, 1])
     with col_center:
         try:
@@ -29,32 +29,40 @@ if not st.session_state["ultra_secure_login"]:
         except:
             st.write("### LIFE PAY")
         
-        st.markdown("<h3 style='text-align: center;'>Введите ПИН-КОД</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>Вход в Реестр</h3>", unsafe_allow_html=True)
         
-        # Поле ввода
-        user_pin = st.text_input("PIN", type="password", label_visibility="collapsed")
+        user_pin = st.text_input("Введите ПИН-КОД", type="password", label_visibility="collapsed")
         
         if st.button("ВОЙТИ", use_container_width=True):
             if user_pin in PIN_DB:
-                st.session_state["ultra_secure_login"] = True
+                st.session_state["v3_auth"] = True
                 st.session_state["user_filter"] = PIN_DB[user_pin]
                 st.rerun()
             else:
-                st.error("Неверный ПИН-код!")
-    st.stop() # Дальше код не пойдет, пока не введешь ПИН
+                st.error("Неверный код доступа")
+    st.stop()
 
-# --- ВСЁ, ЧТО НИЖЕ, ВИДНО ТОЛЬКО ПОСЛЕ ПИН-КОДА ---
+# --- ОСНОВНОЙ КОНТЕНТ (ПОСЛЕ ВХОДА) ---
 user_filter = st.session_state["user_filter"]
 
+# Стили для синего акцента и шрифтов
 st.markdown("""
 <style>
     .stApp { background-color: #F8FAFC; }
-    .sn-block { background: #F1F5F9; border-left: 4px solid #0052FF; padding: 15px; border-radius: 8px; font-family: monospace; }
-    .ttn-btn { display: inline-block; padding: 8px 16px; background: #0052FF; color: white !important; border-radius: 6px; text-decoration: none; font-weight: bold; }
+    .sn-block { 
+        background: #F1F5F9; 
+        border-left: 4px solid #0052FF; 
+        padding: 15px; 
+        border-radius: 8px; 
+        font-family: monospace; 
+        font-size: 14px; 
+        white-space: pre-wrap;
+    }
+    .info-label { font-size: 11px; color: #64748B; font-weight: 700; text-transform: uppercase; }
 </style>
 """, unsafe_allow_html=True)
 
-# ЗАГРУЗКА
+# ЗАГРУЗКА ДАННЫХ
 L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
 @st.cache_data(ttl=5)
@@ -71,20 +79,39 @@ with st.sidebar:
     st.image(LOGO_URL, width=150)
     st.success(f"Доступ: {user_filter}")
     if st.button("Выйти"):
-        st.session_state["ultra_secure_login"] = False
+        st.session_state["v3_auth"] = False
         st.rerun()
+    
+    st.divider()
+    # Фильтр для админа
+    if user_filter == "Все":
+        org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+        sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+    else:
+        sel_org = user_filter
 
-# ФИЛЬТР И ВЫВОД
-df_f = df_raw.iloc[::-1].copy()
-if user_filter != "Все":
-    df_f = df_f[df_f.iloc[:, 2].astype(str).str.contains(user_filter, na=False)]
-
+# ВЫВОД РЕЕСТРА
 st.title("🚚 Реестр отгрузок")
 
+df_f = df_raw.iloc[::-1].copy()
+if sel_org != "Все":
+    df_f = df_f[df_f.iloc[:, 2].astype(str).str.contains(sel_org, na=False)]
+
 if df_f.empty:
-    st.info("Данных нет")
+    st.info("Данных пока нет")
 else:
-    for i, row in df_f.iterrows():
-        with st.expander(f"{row.iloc[12]} | {row.iloc[2]}"):
+    for i, (idx, row) in enumerate(df_f.reset_index(drop=True).iterrows()):
+        # Заголовок карточки
+        header_text = f"{row.iloc[2]} — {row.iloc[1]}"
+        
+        with st.expander(header_text):
+            # 1. Дата отправления (автоматически из столбца M)
+            st.markdown(f"📅 Дата отправления: {row.iloc[12]}")
+            
+            # 2. Оборудование и описание
+            st.markdown("<span class='info-label'>📦 Оборудование и описание:</span>", unsafe_allow_html=True)
             st.markdown(f"<div class='sn-block'>{row.iloc[7]}</div>", unsafe_allow_html=True)
-            st.write(f"Перемещение: {row.iloc[14]}")
+            
+            # 3. Кнопка скачивания деталей
+            csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 Сохранить детали", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
