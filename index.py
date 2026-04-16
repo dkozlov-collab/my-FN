@@ -1,134 +1,139 @@
 import streamlit as st
 import pandas as pd
 
-# --- 1. СТИЛЬ LIFE PAY (БЕЛАЯ КОНСОЛЬ) ---
-st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+# --- 1. ПРЕМИУМ ДИЗАЙН LIFE PAY ---
+st.set_page_config(layout="wide", page_title="LIFE PAY | ОТГРУЗКИ", page_icon="🚚")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #F8FAFC; }
+    .stApp { background-color: #F4F7FB; }
     [data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 1px solid #E2E8F0; }
-    [data-testid="stSidebar"] * { color: #1E293B !important; }
-    .main-header { font-size: 28px; font-weight: 800; color: #0052FF; margin-bottom: 20px; }
     
-    /* СТИЛЬ СТРОКИ-КАРТОЧКИ (ВМЕСТО КУБИКОВ) */
-    .shipping-row {
-        background: white; border-radius: 8px; padding: 15px;
-        margin-bottom: 10px; border-left: 5px solid #0052FF;
+    .main-header { font-size: 32px; font-weight: 900; color: #0052FF; margin-bottom: 30px; letter-spacing: -1px; }
+    
+    /* СТИЛЬ ПРЕМИУМ КАРТОЧКИ */
+    .ship-card {
+        background: white; border-radius: 16px; padding: 25px;
+        margin-bottom: 15px; border: 1px solid #E2E8F0;
         display: flex; justify-content: space-between; align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 20px rgba(0, 82, 255, 0.05);
+        transition: all 0.3s ease;
     }
-    .row-info { flex: 2; font-size: 14px; }
-    .row-details { flex: 3; font-size: 13px; color: #475569; border-left: 1px solid #E2E8F0; padding-left: 15px; margin-left: 15px; }
-    .btn-block { flex: 1; text-align: right; }
+    .ship-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 82, 255, 0.1); border-color: #0052FF; }
     
-    .ttn-link { color: #0052FF; font-weight: bold; text-decoration: none; font-size: 15px; }
-    .badge-status { background-color: #DCFCE7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .date-box { text-align: center; padding-right: 25px; border-right: 2px solid #F1F5F9; min-width: 120px; }
+    .date-day { font-size: 24px; font-weight: 900; color: #1E293B; line-height: 1; }
+    .date-month { font-size: 12px; color: #64748B; text-transform: uppercase; font-weight: 700; }
+    
+    .content-box { flex: 3; padding: 0 30px; }
+    .org-name { font-size: 18px; font-weight: 800; color: #1E293B; margin-bottom: 5px; }
+    .partner-tag { background: #EEF2FF; color: #0052FF; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    
+    .status-box { flex: 1; text-align: right; }
+    .ttn-btn {
+        display: inline-block; padding: 10px 20px; background: #0052FF;
+        color: white !important; border-radius: 10px; text-decoration: none;
+        font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 82, 255, 0.3);
+    }
+    .city-badge { color: #64748B; font-weight: 700; font-size: 13px; display: block; margin-top: 8px; }
+    
+    /* ТЕГИ ДЛЯ СЕРИЙНИКОВ */
+    .sn-tag {
+        display: inline-block; background: #F1F5F9; color: #475569;
+        padding: 2px 10px; border-radius: 20px; font-size: 11px;
+        margin: 2px; border: 1px solid #E2E8F0; font-family: monospace;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ЗАГРУЗКА ДАННЫХ (БЕЗЛИМИТ 80 СТ) ---
-S_URL = "https://docs.google.com/spreadsheets/d/1subRa0xO9jezmbWyIEkamw2f3-5yWmeXEmFOGQZyvLg/export?format=csv"
+# --- 2. ЗАГРУЗКА ДАННЫХ ---
 L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
 
 @st.cache_data(ttl=5)
-def load_all_data():
+def get_data():
     try:
-        s = pd.read_csv(S_URL).fillna("")
-        l = pd.read_csv(L_URL).fillna("")
-        # Чистим пустые строки
-        s = s[s.apply(lambda x: x.astype(str).str.strip().any(), axis=1)]
-        l = l[l.apply(lambda x: x.astype(str).str.strip().any(), axis=1)]
-        return s, l
-    except: return pd.DataFrame(), pd.DataFrame()
+        df = pd.read_csv(L_URL).fillna("")
+        df = df[df.apply(lambda x: x.astype(str).str.strip().any(), axis=1)]
+        return df
+    except: return pd.DataFrame()
 
-df_s, df_l = load_all_data()
+df_raw = get_data()
 
-# --- 3. БЕЛАЯ ЛЕВАЯ КОНСОЛЬ (ФИЛЬТРЫ) ---
+# --- 3. БЕЛАЯ КОНСОЛЬ ---
 with st.sidebar:
     st.markdown("<h1 style='color: #0052FF; margin-bottom:0;'>LIFE PAY</h1>", unsafe_allow_html=True)
-    st.markdown("<span class='badge-status'>● В РЕЙТИНГЕ</span>", unsafe_allow_html=True)
+    st.markdown("<div style='color: #166534; font-weight:700; font-size:12px;'>● В РЕЙТИНГЕ</div>", unsafe_allow_html=True)
     st.divider()
     
-    menu = st.radio("МЕНЮ:", ["🚚 ЛОГИСТИКА", "📦 СКЛАД", "📊 ОТГРУЗКИ"])
-    st.divider()
-    
-    # ГЛОБАЛЬНЫЕ ФИЛЬТРЫ
-    st.write("🔍 ФИЛЬТРАЦИЯ ПОИСКА")
-    
-    # Фильтр по Партнеру (из логистики, обычно 2 столбец)
-    partners = sorted([str(x) for x in df_l.iloc[:, 1].unique() if str(x).strip()])
-    sel_partner = st.selectbox("🤝 Партнер:", ["Все"] + partners)
-    
-    # Фильтр по Организации (обычно 6 столбец / индекс 5)
-    orgs = sorted([str(x) for x in df_l.iloc[:, 5].unique() if str(x).strip() and str(x) != "0"])
-    sel_org = st.selectbox("🏢 Организация:", ["Все"] + orgs)
-
-    st.divider()
-    st.write("LIFE PAY ERP v3.0")
-
-# --- 4. ПРИМЕНЕНИЕ ФИЛЬТРОВ К ДАННЫМ ---
-if sel_partner != "Все":
-    df_l = df_l[df_l.iloc[:, 1].astype(str) == sel_partner]
-if sel_org != "Все":
-    df_l = df_l[df_l.iloc[:, 5].astype(str) == sel_org]
-
-st.markdown(f"<div class='main-header'>LIFE PAY: {menu}</div>", unsafe_allow_html=True)
-
-# --- 5. РАЗДЕЛ: СКЛАД (80 СТОЛБЦОВ + СОРТИРОВКА) ---
-if menu == "📦 СКЛАД":
-    st.write(f"### Складской учет (Всего колонок: {df_s.shape[1]})")
-    search_s = st.text_input("🔍 Быстрый поиск по складу:")
-    if search_s:
-        df_s = df_s[df_s.apply(lambda r: r.astype(str).str.contains(search_s, case=False).any(), axis=1)]
-    # Выводим таблицу с сортировкой (нажми на заголовок)
-    st.data_editor(df_s, use_container_width=True, height=750, hide_index=True)
-
-# --- 6. РАЗДЕЛ: ЛОГИСТИКА ---
-elif menu == "🚚 ЛОГИСТИКА":
-    st.write("### Общий реестр логистики")
-    st.data_editor(df_l, use_container_width=True, height=700, hide_index=True)
-    # --- 7. РАЗДЕЛ: ОТГРУЗКИ (ЛИНЕЙНЫЙ ВИД) ---
-elif menu == "📊 ОТГРУЗКИ":
-    if df_l.empty:
-        st.info("Нет данных по заданным фильтрам")
-    else:
-        # Новые сверху
-        df_f = df_l.iloc[::-1].copy()
+    if not df_raw.empty:
+        # Умные фильтры
+        all_partners = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+        sel_part = st.selectbox("🤝 Партнер:", ["Все"] + all_partners)
         
-        # Фильтр по городу в самой вкладке
-        cities = sorted([str(x) for x in df_l.iloc[:, 3].unique() if str(x).strip()])
-        sel_city = st.selectbox("📍 Город отправки:", ["Все"] + cities)
-        if sel_city != "Все":
-            df_f = df_f[df_f.iloc[:, 3].astype(str) == sel_city]
+        all_orgs = sorted([str(x) for x in df_raw.iloc[:, 5].unique() if str(x).strip() and str(x) != "0"])
+        sel_org = st.selectbox("🏢 Организация:", ["Все"] + all_orgs)
+        
+        search = st.text_input("🔍 Поиск по ТТН:")
+    
+    st.divider()
+    st.write("v 5.0 Premium")
 
-        st.write(f"Найдено: {len(df_f)} отгрузок")
+# --- 4. ФИЛЬТРАЦИЯ ---
+df_f = df_raw.iloc[::-1].copy() # Новые вверх
+if not df_raw.empty:
+    if sel_part != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_part]
+    if sel_org != "Все": df_f = df_f[df_f.iloc[:, 5].astype(str) == sel_org]
+    if search: df_f = df_f[df_f.iloc[:, 10].astype(str).str.contains(search, case=False)]
 
-        # ВЫВОД СТРОКАМИ
-        for i, (idx, row) in enumerate(df_f.reset_index(drop=True).iterrows()):
-            ttn = str(row.iloc[10]) if len(row) > 10 else "---"
-            date_val = str(row.iloc[0])[:10]
-            rec_name = f"{row.iloc[4]} | {row.iloc[5]}" # Получатель + Организация
-            
-            # Рендерим строку
-            st.markdown(f"""
-            <div class="shipping-row">
-                <div class="row-info">
-                    <span style="color:gray; font-weight:bold;">{date_val}</span><br>
-                    <a href="{ttn if 'http' in ttn else '#'}" target="_blank" class="ttn-link">
-                        {'🔗 Накладная ТТН' if 'http' in ttn else '📦 ТТН: '+ttn}
-                    </a><br>
-                    <b>{rec_name}</b>
-                </div>
-                <div class="row-details">
-                    <b>📍 {row.iloc[3]}</b><br>
-                    Состав: {str(row.iloc[7])[:150]}...
-                </div>
+# --- 5. ВЫВОД КАРТОЧЕК ---
+st.markdown("<div class='main-header'>🚚 Мониторинг отгрузок</div>", unsafe_allow_html=True)
+if df_f.empty:
+    st.info("Отгрузок не найдено")
+else:
+    for i, (idx, row) in enumerate(df_f.reset_index(drop=True).iterrows()):
+        # Парсим дату
+        d_str = str(row.iloc[0])
+        day = d_str[8:10] if len(d_str) > 9 else "---"
+        month = "АПРЕЛЬ" if ".04." in d_str or "-04-" in d_str else "ДАТА" # Упрощенно
+        
+        ttn = str(row.iloc[10])
+        org = str(row.iloc[5])
+        partner = str(row.iloc[1])
+        city = str(row.iloc[3])
+        content = str(row.iloc[7])
+        
+        # HTML КАРТОЧКИ
+        st.markdown(f"""
+        <div class="ship-card">
+            <div class="date-box">
+                <div class="date-day">{day}</div>
+                <div class="date-month">{month}</div>
             </div>
-            """, unsafe_allow_html=True)
+            <div class="content-box">
+                <span class="partner-tag">{partner}</span>
+                <div class="org-name">{org}</div>
+                <div style="color: #64748B; font-size: 13px;">Получатель: {row.iloc[4]}</div>
+            </div>
+            <div class="status-box">
+                <a href="{ttn if 'http' in ttn else '#'}" target="_blank" class="ttn-btn">
+                    { '🔗 ОТСЛЕДИТЬ' if 'http' in ttn else '📦 ' + ttn }
+                </a>
+                <span class="city-badge">📍 {city}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # СКРЫТЫЙ БЛОК (Оборудование и серийники)
+        with st.expander("🛠 Состав оборудования и серийные номера"):
+            st.write("Детали состава:")
+            st.info(content)
             
-            # Кнопка Excel и полные данные под каждой строкой
-            with st.expander("📂 Посмотреть полный состав и скачать Excel"):
-                st.write(row)
-                csv = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-                st.download_button("📥 Скачать Excel отгрузки", csv, f"r_{i}.csv", "text/csv", key=f"btn_{i}")
+            # Пытаемся вытащить серийники (если они через запятую или пробел)
+            st.write("Серийные номера (теги):")
+            serials = content.replace(',', ' ').split()
+            tags_html = "".join([f'<span class="sn-tag"># {s}</span>' for s in serials if len(s) > 5])
+            st.markdown(tags_html if tags_html else "Индивидуальные номера не найдены", unsafe_allow_html=True)
+            
+            st.divider()
+            csv = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+            st.download_button(f"📥 Скачать Excel-карточку ТТН {i}", csv, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
