@@ -1,0 +1,7 @@
+# .streamlit/secrets.toml
+[passwords]
+admin = "pay2026"
+biz_auto = "auto_7788"
+ares = "ares_comp_M"
+atm = "atm_alliance"
+br = "br_solutions"
