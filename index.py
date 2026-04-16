@@ -79,7 +79,7 @@ with st.sidebar:  # <-- ДОБАВЬ ЭТУ СТРОКУ
 st.markdown("### 🚚 Реестр отгрузок")
         # --- 6. ПОДГОТОВКА СПИСКА ---
 df_f = df_raw.iloc[::-1].copy()
-        if not df_raw.empty:
+if not df_raw.empty:
          if sel_org != "Все": df_f = df_f[df_f.iloc[:, 2].astype(str) == sel_org]
          if sel_city != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
     
