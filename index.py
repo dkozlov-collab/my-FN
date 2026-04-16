@@ -135,7 +135,7 @@ with st.sidebar:
                         csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
                         st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
  else:
-        st.stop()
+    st.stop()
 import streamlit as st
 import pandas as pd
     # ... другие импорты ...
