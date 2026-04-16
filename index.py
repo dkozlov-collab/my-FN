@@ -126,7 +126,7 @@ if is_auth:
 else:
         st.stop()
 import streamlit as st
-    import pandas as pd
+import pandas as pd
     # ... другие импорты ...
     
     # ВСТАВЛЯТЬ СЮДА (в самое начало после импортов)
