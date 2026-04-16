@@ -127,7 +127,7 @@ import pandas as pd
 # ... другие импорты ...
 
 # ВСТАВЛЯТЬ СЮДА (в самое начало после импортов)
-st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="📊")
+st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎")
 
 st.markdown(
     """
