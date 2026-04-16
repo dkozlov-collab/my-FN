@@ -1,6 +1,6 @@
-    import streamlit as st
-    import pandas as pd
-    from auth_logic import login_system
+import streamlit as st
+import pandas as pd
+from auth_logic import login_system
     
     # --- 1. ПРОВЕРКА АВТОРИЗАЦИИ (ЗАМОК) ---
     is_auth, user_login, user_filter = login_system()
