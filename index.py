@@ -109,8 +109,7 @@ if is_auth:
                     st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
                     st.markdown("<span class='info-label'>📝 ЭДО Подпись:</span>", unsafe_allow_html=True)
-                    st.markdown("<span class='info-label'>📝 ЭДО Подпись:</span>", unsafe_allow_html=True)
-                    # Определяем цвет: зеленый для подписано, красный для направлено
+                        # Определяем цвет: зеленый для подписано, красный для направлено
                    color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
                     st.markdown(f"<div style='color: {color}; font-size: 1.1rem; font-weight: bold;'>{edo_val}</div>", unsafe_allow_html=True)
                     
