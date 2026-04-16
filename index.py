@@ -88,7 +88,7 @@ st.markdown("### 🚚 Реестр отгрузок")
         
 if df_f.empty:
             st.info("Данные не найдены")
-        else:
+else:
             for idx, row in df_f.reset_index(drop=True).iterrows():
                 # Извлекаем значения
                 date_val = str(row.iloc[12])
