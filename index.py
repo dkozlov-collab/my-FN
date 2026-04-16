@@ -132,7 +132,7 @@ import pandas as pd
     # ВСТАВЛЯТЬ СЮДА (в самое начало после импортов)
 st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎")
     
-    st.markdown(
+st.markdown(
         """
         <head>
             <meta property="og:title" content="RBS GLOBAL ERP" />
