@@ -93,6 +93,7 @@ if is_auth:
             content = raw_content.split(',')[0].strip()
             
             move_val = str(row.iloc[14])
+            edo_val = str(row.iloc[15])
             # Иконка и заголовок
             icon = "🔗" if "http" in ttn_val else "📦"
             header = f"{date_val} | {org_val} ({city_val}) {icon}"
@@ -107,6 +108,8 @@ if is_auth:
                 with col2:
                     st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
+                    st.markdown("<span class='info-label'>📝 ЭДО Подпись:</span>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='move-number'>{edo_val}</div>", unsafe_allow_html=True)
                     
                     st.divider()
                     st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
