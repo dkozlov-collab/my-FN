@@ -125,7 +125,7 @@ if is_auth:
                         st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
 else:
         st.stop()
-    import streamlit as st
+import streamlit as st
     import pandas as pd
     # ... другие импорты ...
     
