@@ -57,30 +57,28 @@ if is_auth:
             mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
             df_raw = df_raw[mask]
     
-        # --- 5. БОКОВАЯ ПАНЕЛЬ ---
-        with st.sidebar:
-            st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
-            st.write(f"👤 Пользователь: {user_login}")
-            st.divider()
-        if not df_raw.empty:
-            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-        if not df_raw.empty:
-            # Получаем список всех уникальных организаций из таблицы
-            all_orgs = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            
-            # --- ЛОГИКА РАЗДЕЛЕНИЯ ДОСТУПА ---
-            if user_filter != "Все":
-                # ОБЫЧНЫЙ ПОЛЬЗОВАТЕЛЬ: видит только свою компанию
-                # Фильтруем список так, чтобы в нем осталась только его организация
-                user_org_list = [org for org in all_orgs if user_filter.lower() in org.lower()]
-                sel_org = st.selectbox("🏢 Организация:", user_org_list)
-            else:
-                # АДМИН: видит всё и может выбрать "Все"
-                sel_org = st.selectbox("🏢 Организация:", ["Все"] + all_orgs)
+      # --- 5. БОКОВАЯ ПАНЕЛЬ ---
+with st.sidebar:
+    st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
+    st.write(f"👤 Пользователь: {user_login}")
+    st.divider()
+
+    if not df_raw.empty:
+        # Получаем полный список организаций из таблицы
+        org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+        
+        # ЛОГИКА ДОСТУПА:
+        if user_filter != "Все":
+            # Пользователь (например, БР) видит только своё
+            user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
+            sel_org = st.selectbox("🏢 Организация:", user_orgs)
         else:
+            # Админ видит всё
             sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-            sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
+
+        # ГОРОД (обязательно на этом уровне отступа!)
+        city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+        sel_city = st.selectbox("📍 Город:", ["Все"] + city_list)
     
         # --- 6. ПОДГОТОВКА СПИСКА ---
         df_f = df_raw.iloc[::-1].copy()
