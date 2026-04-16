@@ -84,7 +84,7 @@ if not df_raw.empty:
          if sel_city != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
     
         # --- 7. ВЫВОД РЕЕСТРА ---
-        st.markdown("### 🚚 Реестр отгрузок")
+st.markdown("### 🚚 Реестр отгрузок")
         
         if df_f.empty:
             st.info("Данные не найдены")
