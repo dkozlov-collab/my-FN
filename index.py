@@ -100,7 +100,7 @@ for i, (idx, row) in enumerate(df_f.iterrows()):
         else: btns += f"<div style='font-weight:bold; color:#1E3A8A;'>📦 ТТН: {ttn}</div>"
         
         if "http" in status: btns += f'<a href="{status}" target="_blank" class="click-btn">📍 Статус</a>'
-            st.markdown(f"""
+    st.markdown(f"""
         <div class="card">
             <div style="margin-bottom:10px;">{btns}</div>
             <div style="font-size:15px; font-weight:700;">{row.get('Full_Name', '---')}</div>
