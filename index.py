@@ -63,7 +63,9 @@ with st.sidebar:  # <-- ДОБАВЬ ЭТУ СТРОКУ
     st.write(f"👤 Пользователь: {user_login}")
     st.divider()
 
-    if not df_raw.empty:
+   if not df_raw.empty:
+    with st.sidebar:
+        # тут твои фильтры...
         org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
         if user_filter != "Все":
             user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
