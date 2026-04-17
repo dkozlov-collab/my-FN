@@ -110,8 +110,8 @@ if is_auth:
                     # Сначала создаем переменную edo_val (берем из колонки P)
                    edo_val = str(row.iloc[15]) 
 
-        # А теперь уже выбираем цвет (твоя 112-я строка)
-        color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
+                # А теперь уже выбираем цвет (твоя 112-я строка)
+                color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
         
                # И выводим на экран
                 st.markdown(f"<div style='color:{color}; font-weight:bold;'>ЭДО: {edo_val}</div>", unsafe_allow_html=True)
