@@ -67,7 +67,7 @@ if is_auth:
          org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
             # ЖЕСТКИЙ БАРЬЕР
-            if user_filter == "Все":
+    if user_filter == "Все":
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
             else:
                 # Если зашел партнер (БР, АТМ), у него ВООБЩЕ не будет выбора
