@@ -130,17 +130,17 @@ if is_auth:
                     else:
                         st.write("Не указан")
 
-            st.write("") # Небольшой отступ
-            csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-            st.download_button(
-                        label="📥 Скачать Excel",
-                        data=csv_data,
-                        file_name=f"ship_{idx}.csv",
-                        mime="text/csv",
+           # 4. КНОПКА EXCEL (СТАВИМ СЮДА)
+                    csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+                    st.download_button(
+                        label="📥 Excel", 
+                        data=csv_data, 
+                        file_name=f"ship_{idx}.csv", 
+                        mime="text/csv", 
                         key=f"dl_{idx}",
-                        use_container_width=True # Растянет кнопку на всю ширину колонки
+                        use_container_width=True # Это сделает её аккуратной по ширине колонки
                     )
 
-# Проверь, чтобы ниже НЕ БЫЛО лишних else: и лишних кнопок!
+# ВАЖНО: Удали всё, что касается кнопки Excel НИЖЕ этой строки (прижатое к краю), чтобы она не дублировалась!
 else:
     st.stop()
