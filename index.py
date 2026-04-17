@@ -67,7 +67,7 @@ if is_auth:
                org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
             # --- ВОТ ТУТ РУЧНАЯ ПРАВКА ДОСТУПА ---
-            if user_filter != "Все":
+    if user_filter != "Все":
                 # Для партнера убираем "+ ['Все']", оставляем только его компанию
                 sel_org = st.selectbox("🏢 Организация:", org_list) # <--- ДОБАВЬ ЭТУ СТРОКУ!
             else:
