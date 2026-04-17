@@ -64,8 +64,7 @@ if is_auth:
         st.divider()
         
    if not df_raw.empty:
-            # Создаем список организаций
-            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+         org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
             # ЖЕСТКИЙ БАРЬЕР
             if user_filter == "Все":
