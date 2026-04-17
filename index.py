@@ -63,9 +63,19 @@ if is_auth:
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
         
-        if not df_raw.empty:
+       if not df_raw.empty:
+            # 1. Получаем список организаций (он уже отфильтрован в шаге 4)
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            
+            # 2. ВОТ ТВОЙ БАРЬЕР (ВСТАВЬ ЭТО ВМЕСТО СТАРОЙ СТРОКИ SEL_ORG):
+            if user_filter != "All" and user_filter != "Все":
+                # Если зашел партнер (БР, АТМ и т.д.) - пункт "Все" НЕ ДОБАВЛЯЕМ
+                sel_org = st.selectbox("🏢 Организация:", org_list)
+            else:
+                # Если зашел Админ - добавляем "Все"
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+
+            # 3. Город (тут можно оставить как есть)
             city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
             sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
 
