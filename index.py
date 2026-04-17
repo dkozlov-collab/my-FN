@@ -1,118 +1,100 @@
 import streamlit as st
 import pandas as pd
-# Импортируем твою логику авторизации
-from auth_logic import login_system 
+from auth_logic import login_system
 
-# 1. ЗАПУСКАЕМ ПРОВЕРКУ (Это должно быть первым делом)
-is_auth, user_login, user_filter = login_system()
+# 1. НАСТРОЙКИ СТРАНИЦЫ (Самый верх)
+st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎", layout="wide")
 
-# 2. ВСЁ ЧТО НИЖЕ — ПОД ЗАМКОМ
-if is_auth:
-    # Конфигурация страницы (только один раз и только здесь!)
-    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+# 2. АВТОРИЗАЦИЯ
+auth_status, user_login, user_filter = login_system()
 
-    # Твой красивый CSS стиль
-    st.markdown("""
-    <style>
-        .stApp { background-color: #F8FAFC; }
-        [data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 1px solid #E2E8F0; }
-        .compact-row {
-            background: white; padding: 12px 20px; border-radius: 12px;
-            margin-bottom: 8px; border: 1px solid #E2E8F0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .main-text { font-size: 16px; font-weight: 700; color: #1E293B; }
-        .sub-text { font-size: 12px; color: #64748B; font-weight: 600; text-transform: uppercase; }
-        .sn-block {
-            background: #F8FAFC; border-left: 3px solid #0052FF;
-            padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px;
-        }
-        .ttn-btn {
-            display: inline-block; background: #0052FF; color: white !important; 
-            padding: 8px 16px; border-radius: 8px; text-decoration: none; 
-            font-size: 12px; font-weight: 700; text-align: center;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # --- ДАННЫЕ ---
-    L_URL = "https://docs.google.com/spreadsheets/d/1Q4MGhp0KsLb57Ouqu58j_Md5zoFgAhFd3ld15cyOHrU/export?format=csv"
-
-    @st.cache_data(ttl=5)
+if auth_status:
+    # --- ФУНКЦИЯ ЗАГРУЗКИ ДАННЫХ ---
+    @st.cache_data(ttl=60)
     def load_data():
+        # Ссылка на твою таблицу (проверь, чтобы она была верной)
+        sheet_id = "1D7f_eI4E8W0E9rM0_G-n4vY9vU7v5y1y" 
+        url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
         try:
-            df = pd.read_csv(L_URL).fillna("")
-            # Убираем пустые строки
-            return df[df.apply(lambda x: x.astype(str).str.strip().any(), axis=1)]
-        except: 
+            return pd.read_csv(url)
+        except Exception as e:
+            st.error(f"Ошибка загрузки данных: {e}")
             return pd.DataFrame()
 
+    # --- 4. ЗАГРУЗКА ДАННЫХ ---
     df_raw = load_data()
 
-    # --- ФИЛЬТРЫ В БОКОВОЙ ПАНЕЛИ ---
+    # --- 5. БОКОВАЯ ПАНЕЛЬ (ТОЛЬКО ФИЛЬТРЫ) ---
     with st.sidebar:
-        st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#0052FF'>РЕЕСТР ОТГРУЗОК</h2>", unsafe_allow_html=True)
         st.write(f"👤 Пользователь: {user_login}")
-        
+        st.divider()
+
         if not df_raw.empty:
-            # Организация (Столбец C / индекс 2)
-            orgs = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            sel_org = st.selectbox("🏢 Организация:", ["Все"] + orgs)
-            # Город (Столбец B / индекс 1)
-            cities = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-            sel_city = st.selectbox("📍 Город:", ["Все"] + cities)
+            # Получаем список организаций
+            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+            
+            # Фильтр организации: партнер видит только себя, админ - всех
+            if user_filter != "Все":
+                user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
+                sel_org = st.selectbox("🏢 Организация:", user_orgs)
+            else:
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            
+            # Фильтр города
+            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+            sel_city = st.selectbox("📍 Город:", ["Все"] + city_list)
         
         st.divider()
-        if st.button("Выйти"):
-            st.session_state.authenticated = False
+        if st.button("🔄 Обновить данные"):
+            st.cache_data.clear()
             st.rerun()
 
-    # --- ОБРАБОТКА ДАННЫХ ---
-    df_f = df_raw.iloc[::-1].copy() # Новые сверху
+    # --- 6. ГЛАВНАЯ СТРАНИЦА (РЕЕСТР) ---
+    st.markdown("## 🚚 Список отгрузок")
+
     if not df_raw.empty:
-        if sel_org != "Все": 
-            df_f = df_f[df_f.iloc[:, 2].astype(str) == sel_org]
-        if sel_city != "Все": 
-            df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
+        # Копируем данные для фильтрации
+        df_f = df_raw.iloc[::-1].copy()
 
-    # --- ВЫВОД РЕЕСТРА ---
-    st.markdown("### 🚚 Последние отгрузки")
+        # Применяем фильтры из боковой панели
+        if sel_org != "Все":
+            df_f = df_f[df_f[df_f.columns[2]].astype(str) == sel_org]
+        if sel_city != "Все":
+            df_f = df_f[df_f[df_f.columns[1]].astype(str) == sel_city]
 
-    if df_f.empty:
-        st.info("Ничего не найдено или таблица пуста")
-    else:
-        for i, (idx, row) in enumerate(df_f.reset_index(drop=True).iterrows()):
-            # Индексы столбцов соответствуют твоей структуре
-            date_val = str(row.iloc[12])
-            org_val = str(row.iloc[2])
-            city_val = str(row.iloc[1])
-            ttn_val = str(row.iloc[10])
-            content = str(row.iloc[7])
-            
-            label = f"{date_val}  |  {org_val}  ({city_val})"
-            
-            with st.expander(label):
-                col1, col2 = st.columns([2, 1])
+        if df_f.empty:
+            st.info("Данные по выбранным фильтрам не найдены")
+        else:
+            # Вывод карточек отгрузок
+            for idx, row in df_f.reset_index(drop=True).iterrows():
+                date_val = str(row.iloc[12])
+                org_val = str(row.iloc[2])
+                city_val = str(row.iloc[1])
                 
-                with col1:
-                    st.markdown("<span class='sub-text'>📦 Состав и Серийные номера:</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
+                header = f"{date_val} | {org_val} ({city_val})"
                 
-                with col2:
-                    st.markdown("<span class='sub-text'>🔗 Документы:</span>", unsafe_allow_html=True)
-                    if "http" in ttn_val:
-                        st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-btn">ОТСЛЕДИТЬ ТТН</a>', unsafe_allow_html=True)
-                    else:
-                        st.code(ttn_val if ttn_val else "Нет данных")
+                with st.expander(header):
+                    col1, col2 = st.columns(2)
                     
-                    st.write("") # Отступ
-                    # Кнопка скачивания конкретной строки в CSV
-                    row_df = pd.DataFrame([row])
-                    csv_data = row_df.to_csv(index=False).encode('utf-8-sig')
-                    st.download_button(
-                        label="📥 Скачать Excel",
-                        data=csv_data,
-                        file_name=f"shipment_{idx}.csv",
-                        mime="text/csv",
-                        key=f"dl_{idx}"
-                    )
+                    with col1:
+                        st.markdown("📦 ОБОРУДОВАНИЕ:")
+                        content = str(row.iloc[7]).split(',')[0].strip()
+                        st.info(content)
+                    
+                    with col2:
+                        move_val = str(row.iloc[14])
+                        edo_val = str(row.iloc[15])
+                        
+                        st.markdown(f"📄 Номер перемещения: {move_val}")
+                        
+                        # Цвет статуса ЭДО
+                        color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
+                        st.markdown(f"📝 ЭДО: <span style='color:{color}; font-weight:bold;'>{edo_val}</span>", unsafe_allow_html=True)
+
+    else:
+        st.warning("Таблица пуста или не загрузилась.")
+
+else:
+    # Если не авторизован, login_system сама покажет форму входа
+    st.stop()
