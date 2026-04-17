@@ -62,9 +62,9 @@ if is_auth:
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
         
-        if not df_raw.empty:
+    if not df_raw.empty:
             # Получаем уникальный список организаций из УЖЕ отфильтрованной таблицы
-        org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+    org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
             # --- ВОТ ТУТ РУЧНАЯ ПРАВКА ДОСТУПА ---
             if user_filter != "Все":
