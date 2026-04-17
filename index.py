@@ -106,23 +106,27 @@ if is_auth:
                     st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
                 
                 with col2:
-                    # Номер перемещения (уже есть)
+                    # 1. Номер перемещения
                     st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
                     
-                    st.divider() # Разделитель для красоты
+                    st.divider()
 
-                    # --- ВОТ ЭТОТ БЛОК НУЖНО ПОМЕНЯТЬ ---
-                    # Логика цвета
+                    # 2. ЭДО Подпись (надпись и статус вместе)
                     color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
-                    
-                    # Выводим заголовок И статус вместе одним блоком
                     st.markdown(f"""
-                        <div style="text-align: left;">
+                        <div style="margin-bottom: 15px;">
                             <span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span><br>
                             <span style='color: {color}; font-weight: bold; font-size: 1.1rem;'>{edo_val}</span>
                         </div>
                     """, unsafe_allow_html=True)
+
+                    # 3. Трек-номер / Кнопка "ОТСЛЕДИТЬ" (теперь тоже справа!)
+                    st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
+                    if "http" in ttn_val:
+                        st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
+                    else:
+                        st.code(ttn_val)
                     
                 if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
