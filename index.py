@@ -56,30 +56,25 @@ if is_auth:
     if not df_raw.empty and user_filter != "Все":
         mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
         df_raw = df_raw[mask]
-  # --- 5. БОКОВАЯ ПАНЕЛЬ ---
-  with st.sidebar:
-      st.markdown(...)
-      st.write(...)
-      st.divider()
+with st.sidebar:
+    st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
+    st.write(f"👤 Пользователь: {user_login}")
+    st.divider()
 
-    # СТРОКИ 66-70 (СЕЙЧАС ОНИ У ТЕБЯ БЕЗ ОТСТУПОВ, ИХ НАДО СДВИНУТЬ):
-    if not df_raw.empty:  # Добавь сюда 4 пробела
-        org_list = sorted(...)  # Добавь сюда 8 пробелов
-        # ... и так далее для всего блока выбора организации и города
-        
     if not df_raw.empty:
-            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+        # 1. Получаем список организаций
+        org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
+        
+        # 2. Ограничение выбора организации
+        if user_filter != "Все":
+            user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
+            sel_org = st.selectbox("🏢 Организация:", user_orgs)
+        else:
+            sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
             
-            # 1. Блок Организации
-    if user_filter != "Все":
-                user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
-                sel_org = st.selectbox("🏢 Организация:", user_orgs)
-    else:
-                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-            
-            # 2. ВОТ ЭТА СТРОКА ДОЛЖНА БЫТЬ ТУТ! (Проверь её наличие)
-    city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-    sel_city = st.selectbox("📍 Город", ["Все"] + city_list) # Ты создаешь sel_city здесь
+        # 3. Выбор города
+        city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+        sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
           
     # --- 6. ПОДГОТОВКА СПИСКА ---
     df_f = df_raw.iloc[::-1].copy()
