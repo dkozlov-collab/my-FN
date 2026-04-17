@@ -93,6 +93,7 @@ if is_auth:
             content = raw_content.split(',')[0].strip()
             
             move_val = str(row.iloc[14])
+            edo_val = str(row.iloc[15])
             # Иконка и заголовок
             icon = "🔗" if "http" in ttn_val else "📦"
             header = f"{date_val} | {org_val} ({city_val}) {icon}"
