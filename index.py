@@ -103,10 +103,6 @@ if is_auth:
                 with col1:
                     st.markdown("<span class='info-label'>🛠 ОБОРУДОВАНИЕ:</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
                 with col2:
                     st.markdown("<span class='info-label'>📋 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
