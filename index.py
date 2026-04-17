@@ -103,24 +103,22 @@ if is_auth:
                 with col1:
                     st.markdown("<span class='info-label'>🛠 ОБОРУДОВАНИЕ:</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
+                
                 with col2:
-                    st.markdown("<span class='info-label'>📋 Номер перемещения (O):</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
-            
-            # --- ВСТАВЛЯЙ СЮДА ---
-            edo_status = str(row.iloc[15])
-            st.markdown(f"ЭДО: {edo_status}")
-            # ---------------------
-            st.divider()
-            st.divider()
-            st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
-        if "http" in ttn_val:
-            st.markdown(...)
-        else:
-            st.write("Не указан")
-        
-        # Вот эти две строки должны стоять ровно под "if" и "else"
-        csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
+                    
+                    st.divider()
+                    st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
+                    
+                    if "http" in ttn_val:
+                        st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
+                    elif ttn_val.strip():
+                        st.code(ttn_val)
+                    else:
+                        st.write("Не указан")
+                    
+                    csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+                    st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
 else:
     st.stop()
