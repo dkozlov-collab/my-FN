@@ -56,7 +56,7 @@ if is_auth:
         # Ищем точное совпадение организации в колонке №2 (индекс 2)
         df_raw = df_raw[df_raw.iloc[:, 2].astype(str).str.contains(user_filter, case=False, na=False)]
 
-    # --- 5. БОКОВАЯ ПАНЕЛЬ ---
+ # --- 5. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
         # ПРОВЕРЬ: Все строки ниже должны иметь отступ (нажми Tab перед каждой)
         st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
@@ -66,18 +66,14 @@ if is_auth:
         if not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
-            # ЖЕСТКИЙ БАРЬЕР
-    if user_filter == "Все":
+            # Наш барьер (тоже с отступом!)
+            if user_filter != "Все":
+                sel_org = st.selectbox("🏢 Организация:", org_list)
+            else:
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-    else:
-                # Если зашел партнер (БР, АТМ), у него ВООБЩЕ не будет выбора
-                # Мы просто фиксируем его организацию без выпадающего списка
-                sel_org = org_list[0] if org_list else "Неизвестно"
-                st.info(f"🏢 Организация: {sel_org}") # Вместо списка просто пишем текст
 
-            # Город
-    city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-    sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
+            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+            sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
 
     # --- 6. ПОДГОТОВКА СПИСКА ---
     df_f = df_raw.iloc[::-1].copy()
