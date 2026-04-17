@@ -50,35 +50,35 @@ if is_auth:
         except: 
             return pd.DataFrame()
 
-        df_raw = load_data()
-    
-        # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
-        if not df_raw.empty and user_filter != "Все":
-            mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
-            df_raw = df_raw[mask]
-    with st.sidebar:
-        st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
-        st.write(f"👤 Пользователь: {user_login}")
-        st.divider()
-    
-        if not df_raw.empty:
-            # 1. Получаем список организаций
-            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            
-            # 2. Ограничение выбора организации
-            if user_filter != "Все":
-                user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
-                sel_org = st.selectbox("🏢 Организация:", user_orgs)
-            else:
-                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            df_raw = load_data()
+        
+            # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
+            if not df_raw.empty and user_filter != "Все":
+                mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
+                df_raw = df_raw[mask]
+        with st.sidebar:
+            st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
+            st.write(f"👤 Пользователь: {user_login}")
+            st.divider()
+        
+            if not df_raw.empty:
+                # 1. Получаем список организаций
+                org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
                 
-            # 3. Выбор города
-            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-            sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
-              
-        # --- 6. ПОДГОТОВКА СПИСКА ---
-        df_f = df_raw.iloc[::-1].copy()
-        if not df_raw.empty:
+                # 2. Ограничение выбора организации
+                if user_filter != "Все":
+                    user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
+                    sel_org = st.selectbox("🏢 Организация:", user_orgs)
+                else:
+                    sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+                    
+                # 3. Выбор города
+                city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+                sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
+                  
+            # --- 6. ПОДГОТОВКА СПИСКА ---
+            df_f = df_raw.iloc[::-1].copy()
+            if not df_raw.empty:
             if sel_org != "Все": df_f = df_f[df_f.iloc[:, 2].astype(str) == sel_org]
             if sel_city != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
     
