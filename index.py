@@ -111,7 +111,7 @@ if is_auth:
                 color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
                 st.markdown(f"<div style='color: {color}; font-size: 1.1rem; font-weight: bold;'>{edo_val}</div>", unsafe_allow_html=True)
                 st.divider()
-                    st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
+                st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
                     
                     if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
