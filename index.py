@@ -124,7 +124,7 @@ if is_auth:
                     # 3. Трек-номер / Кнопка "ОТСЛЕДИТЬ" (теперь тоже справа!)
                     st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
                     
-                else:
+                 else:
                         st.write("Не указан")
                     
                 csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
