@@ -1,7 +1,6 @@
 import streamlit as st  # Исправлено mport -> import
 import pandas as pd
 from auth_logic import login_system  # Убрана решетка #
-
 # 1. ЗАПУСКАЕМ ПРОВЕРКУ
 is_auth, user_login, user_filter = login_system()
 
