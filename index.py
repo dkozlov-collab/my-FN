@@ -123,15 +123,7 @@ if is_auth:
 
                     # 3. Трек-номер / Кнопка "ОТСЛЕДИТЬ" (теперь тоже справа!)
                     st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
-                    if "http" in ttn_val:
-                        st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
-                    else:
-                        st.code(ttn_val)
                     
-                if "http" in ttn_val:
-                        st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
-                elif ttn_val.strip():
-                        st.code(ttn_val)
                 else:
                         st.write("Не указан")
                     
