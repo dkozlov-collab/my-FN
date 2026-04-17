@@ -51,11 +51,10 @@ if is_auth:
             return pd.DataFrame()
 
     df_raw = load_data()
-
-    # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
+# --- 4. СКРЫТЫЙ ФИЛЬТР (СТРОГИЙ) ---
     if not df_raw.empty and user_filter != "Все":
-        mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
-        df_raw = df_raw[mask]
+        # Ищем точное совпадение организации в колонке №2 (индекс 2)
+        df_raw = df_raw[df_raw.iloc[:, 2].astype(str).str.contains(user_filter, case=False, na=False)]
 
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
