@@ -76,7 +76,7 @@ if is_auth:
                 st.info(f"🏢 Организация: {sel_org}") # Вместо списка просто пишем текст
 
             # Город
-            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+        city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
             sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
 
     # --- 6. ПОДГОТОВКА СПИСКА ---
