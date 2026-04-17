@@ -117,8 +117,8 @@ if is_auth:
             # ---------------------
 
             st.divider()
-                    st.divider()
-                    st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
+            st.divider()
+            st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
                     
                     if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
