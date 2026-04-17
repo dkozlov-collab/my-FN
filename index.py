@@ -50,101 +50,101 @@ if is_auth:
         except: 
             return pd.DataFrame()
 
-    df_raw = load_data()
-
-    # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
-    if not df_raw.empty and user_filter != "Все":
-        mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
-        df_raw = df_raw[mask]
-with st.sidebar:
-    st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
-    st.write(f"👤 Пользователь: {user_login}")
-    st.divider()
-
-    if not df_raw.empty:
-        # 1. Получаем список организаций
-        org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-        
-        # 2. Ограничение выбора организации
-        if user_filter != "Все":
-            user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
-            sel_org = st.selectbox("🏢 Организация:", user_orgs)
-        else:
-            sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
-            
-        # 3. Выбор города
-        city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
-        sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
-          
-    # --- 6. ПОДГОТОВКА СПИСКА ---
-    df_f = df_raw.iloc[::-1].copy()
-    if not df_raw.empty:
-        if sel_org != "Все": df_f = df_f[df_f.iloc[:, 2].astype(str) == sel_org]
-        if sel_city != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
-
-    # --- 7. ВЫВОД РЕЕСТРА ---
-    st.markdown("### 🚚 Реестр отгрузок")
+        df_raw = load_data()
     
-    if df_f.empty:
-        st.info("Данные не найдены")
-    else:
-        for idx, row in df_f.reset_index(drop=True).iterrows():
-            # Извлекаем значения
-            date_val = str(row.iloc[12])
-            org_val  = str(row.iloc[2])
-            city_val = str(row.iloc[1])
-            ttn_val  = str(row.iloc[13])
+        # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
+        if not df_raw.empty and user_filter != "Все":
+            mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
+            df_raw = df_raw[mask]
+    with st.sidebar:
+        st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
+        st.write(f"👤 Пользователь: {user_login}")
+        st.divider()
+    
+        if not df_raw.empty:
+            # 1. Получаем список организаций
+            org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
-            # Очистка оборудования (берем до первой запятой)
-            raw_content = str(row.iloc[7])
-            content = raw_content.split(',')[0].strip()
-            
-            move_val = str(row.iloc[14])
-            edo_val = str(row.iloc[15])
-            # Иконка и заголовок
-            icon = "🔗" if "http" in ttn_val else "📦"
-            header = f"{date_val} | {org_val} ({city_val}) {icon}"
-            
-            with st.expander(header):
-                col1, col2 = st.columns([3, 1])
+            # 2. Ограничение выбора организации
+            if user_filter != "Все":
+                user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
+                sel_org = st.selectbox("🏢 Организация:", user_orgs)
+            else:
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
                 
-                with col1:
-                    st.markdown("<span class='info-label'>🛠 ОБОРУДОВАНИЕ:</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
+            # 3. Выбор города
+            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+            sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
+              
+        # --- 6. ПОДГОТОВКА СПИСКА ---
+        df_f = df_raw.iloc[::-1].copy()
+        if not df_raw.empty:
+            if sel_org != "Все": df_f = df_f[df_f.iloc[:, 2].astype(str) == sel_org]
+            if sel_city != "Все": df_f = df_f[df_f.iloc[:, 1].astype(str) == sel_city]
+    
+        # --- 7. ВЫВОД РЕЕСТРА ---
+        st.markdown("### 🚚 Реестр отгрузок")
+        
+        if df_f.empty:
+            st.info("Данные не найдены")
+        else:
+            for idx, row in df_f.reset_index(drop=True).iterrows():
+                # Извлекаем значения
+                date_val = str(row.iloc[12])
+                org_val  = str(row.iloc[2])
+                city_val = str(row.iloc[1])
+                ttn_val  = str(row.iloc[13])
                 
-                with col2:
-                    # 1. Номер перемещения
-                    st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
+                # Очистка оборудования (берем до первой запятой)
+                raw_content = str(row.iloc[7])
+                content = raw_content.split(',')[0].strip()
+                
+                move_val = str(row.iloc[14])
+                edo_val = str(row.iloc[15])
+                # Иконка и заголовок
+                icon = "🔗" if "http" in ttn_val else "📦"
+                header = f"{date_val} | {org_val} ({city_val}) {icon}"
+                
+                with st.expander(header):
+                    col1, col2 = st.columns([3, 1])
                     
-                    st.divider()
-
-                    # 2. ЭДО Подпись (надпись и статус вместе)
-                    color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
-                    st.markdown(f"""
-                        <div style="margin-bottom: 15px;">
-                            <span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span><br>
-                            <span style='color: {color}; font-weight: bold; font-size: 1.1rem;'>{edo_val}</span>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-                    # 3. Трек-номер (внутри with col2)
-                    st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
-                    if "http" in ttn_val:
-                        st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
-                    elif ttn_val.strip():
-                        st.code(ttn_val)
-                    else:
-                        st.write("Не указан")
-
-           # 4. КНОПКА EXCEL (СТАВИМ СЮДА)
-                    csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-                    st.download_button(
-                        label="📥 Excel", 
-                        data=csv_data, 
-                        file_name=f"ship_{idx}.csv", 
-                        mime="text/csv", 
-                        key=f"dl_{idx}",
-                        use_container_width=True # Это сделает её аккуратной по ширине колонки
-                    )
-
+                    with col1:
+                        st.markdown("<span class='info-label'>🛠 ОБОРУДОВАНИЕ:</span>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
+                    
+                    with col2:
+                        # 1. Номер перемещения
+                        st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
+                        
+                        st.divider()
+    
+                        # 2. ЭДО Подпись (надпись и статус вместе)
+                        color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
+                        st.markdown(f"""
+                            <div style="margin-bottom: 15px;">
+                                <span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span><br>
+                                <span style='color: {color}; font-weight: bold; font-size: 1.1rem;'>{edo_val}</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+    
+                        # 3. Трек-номер (внутри with col2)
+                        st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
+                        if "http" in ttn_val:
+                            st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
+                        elif ttn_val.strip():
+                            st.code(ttn_val)
+                        else:
+                            st.write("Не указан")
+    
+               # 4. КНОПКА EXCEL (СТАВИМ СЮДА)
+                        csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(
+                            label="📥 Excel", 
+                            data=csv_data, 
+                            file_name=f"ship_{idx}.csv", 
+                            mime="text/csv", 
+                            key=f"dl_{idx}",
+                            use_container_width=True # Это сделает её аккуратной по ширине колонки
+                        )
+    
