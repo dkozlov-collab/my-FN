@@ -65,12 +65,12 @@ if is_auth:
         
     if not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            # 2. ВОТ ТВОЙ БАРЬЕР (ВСТАВЬ ЭТО ВМЕСТО СТАРОЙ СТРОКИ SEL_ORG):
-            if user_filter != "All" and user_filter != "Все":
-                # Если зашел партнер (БР, АТМ и т.д.) - пункт "Все" НЕ ДОБАВЛЯЕМ
-                sel_org = st.selectbox("🏢 Организация:", org_list)
+            
+            if user_filter != "Все":
+                # Барьер для партнера
+                sel_org = st.selectbox("🏢 Организация:", org_list) 
             else:
-                # Если зашел Админ - добавляем "Все"
+                # Доступ для админа
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
 
             # 3. Город (тут можно оставить как есть)
