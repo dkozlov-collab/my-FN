@@ -118,20 +118,16 @@ if is_auth:
                     
                     st.divider()
 
-                 # 2. ЭДО Подпись
-        color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
-        
-        # Сначала выводим заголовок
-        st.markdown("<span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span>", unsafe_allow_html=True)
-        
-        # Затем выводим сам статус жирным цветом с четким отступом
-        st.markdown(f"""
-            <div style='color: {color}; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; margin-top: 5px;'>
-                {edo_val}
-            </div>
-        """, unsafe_allow_html=True)
+                    # 2. ЭДО Подпись (надпись и статус вместе)
+                    color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
+                    st.markdown(f"""
+                        <div style="margin-bottom: 15px;">
+                            <span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span><br>
+                            <span style='color: {color}; font-weight: bold; font-size: 1.1rem;'>{edo_val}</span>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-                        # 3. Трек-номер (внутри with col2)
+                    # 3. Трек-номер (внутри with col2)
                     st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
                     if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
