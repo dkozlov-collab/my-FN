@@ -57,7 +57,7 @@ if is_auth:
         mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
         df_raw = df_raw[mask]
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
- with st.sidebar:
+  with st.sidebar:
       st.markdown(...)
       st.write(...)
       st.divider()
