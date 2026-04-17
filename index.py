@@ -63,7 +63,7 @@ if is_auth:
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
         
-       if not df_raw.empty:
+    if not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             # 2. ВОТ ТВОЙ БАРЬЕР (ВСТАВЬ ЭТО ВМЕСТО СТАРОЙ СТРОКИ SEL_ORG):
             if user_filter != "All" and user_filter != "Все":
