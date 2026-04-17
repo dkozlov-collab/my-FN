@@ -21,7 +21,7 @@ if is_auth:
 
     # Дальше идет твой код загрузки данных (тоже с отступом!)
     # --- 1. СТИЛЬ МИНИМАЛИЗМА LIFE PAY ---
-            st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
     st.markdown("""
     <style>
         .stApp { background-color: #F8FAFC; }
