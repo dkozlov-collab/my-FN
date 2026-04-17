@@ -59,9 +59,15 @@ if is_auth:
 
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
-        st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
-        st.write(f"👤 Пользователь: {user_login}")
-        st.divider()
+    # Строки 62-64 (у них уже есть отступ, они СЛЕВА):
+    st.markdown(...)
+    st.write(...)
+    st.divider()
+
+    # СТРОКИ 66-70 (СЕЙЧАС ОНИ У ТЕБЯ БЕЗ ОТСТУПОВ, ИХ НАДО СДВИНУТЬ):
+    if not df_raw.empty:  # Добавь сюда 4 пробела
+        org_list = sorted(...)  # Добавь сюда 8 пробелов
+        # ... и так далее для всего блока выбора организации и города
         
     if not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
