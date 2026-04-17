@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from auth_logic import index.py
 
 # 1. НАСТРОЙКИ СТРАНИЦЫ (Самый верх)
 st.set_page_config(page_title="RBS GLOBAL ERP", page_icon="💎", layout="wide")
