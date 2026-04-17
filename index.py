@@ -131,8 +131,8 @@ if is_auth:
                         st.write("Не указан")
 
             st.write("") # Небольшой отступ
-                    csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-                    st.download_button(
+            csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+            st.download_button(
                         label="📥 Скачать Excel",
                         data=csv_data,
                         file_name=f"ship_{idx}.csv",
