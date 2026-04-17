@@ -131,7 +131,7 @@ if is_auth:
             </div>
         """, unsafe_allow_html=True)
 
-                    # 3. Трек-номер (внутри with col2)
+                        # 3. Трек-номер (внутри with col2)
                         st.markdown("<span class='info-label'>🚚 ТРЕК-НОМЕР (N):</span>", unsafe_allow_html=True)
                     if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" style="display: block; text-align: center; padding: 10px; background: #0052FF; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 5px;">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
