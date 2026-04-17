@@ -58,7 +58,6 @@ if is_auth:
         df_raw = df_raw[mask]
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
  with st.sidebar:
-    # Строки 62-64 (у них уже есть отступ, они СЛЕВА):
       st.markdown(...)
       st.write(...)
       st.divider()
