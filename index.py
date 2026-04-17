@@ -58,11 +58,11 @@ if is_auth:
         df_raw = df_raw[mask]
 
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
-with st.sidebar:
+ with st.sidebar:
     # Строки 62-64 (у них уже есть отступ, они СЛЕВА):
-st.markdown(...)
-st.write(...)
-st.divider()
+      st.markdown(...)
+      st.write(...)
+      st.divider()
 
     # СТРОКИ 66-70 (СЕЙЧАС ОНИ У ТЕБЯ БЕЗ ОТСТУПОВ, ИХ НАДО СДВИНУТЬ):
     if not df_raw.empty:  # Добавь сюда 4 пробела
