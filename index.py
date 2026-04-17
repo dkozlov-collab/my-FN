@@ -147,6 +147,6 @@ with st.sidebar:
                         key=f"dl_{idx}",
                         use_container_width=True # Это сделает её аккуратной по ширине колонки
                     )
-# ... (весь твой код выше) ...
-else:
-    st.stop()
+# ... какой-то код ...
+    else:
+        st.stop()
