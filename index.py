@@ -58,6 +58,7 @@ if is_auth:
 
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
+        # ПРОВЕРЬ: Все строки ниже должны иметь отступ (нажми Tab перед каждой)
         st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
