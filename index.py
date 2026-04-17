@@ -148,5 +148,5 @@ with st.sidebar:
                         use_container_width=True # Это сделает её аккуратной по ширине колонки
                     )
 # ... какой-то код ...
-    else:
+else:
         st.stop()
