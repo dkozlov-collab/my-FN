@@ -149,6 +149,5 @@ with st.sidebar:
                     )
 
 # ... (весь твой код выше) ...
-
 else:
     st.stop()
