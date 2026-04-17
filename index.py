@@ -119,13 +119,12 @@ if is_auth:
             st.divider()
             st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
         if "http" in ttn_val:
-                        st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
-        elif ttn_val.strip():
-                        st.code(ttn_val)
+            st.markdown(...)
         else:
-                        st.write("Не указан")
-                    
-         csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-                       st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
+            st.write("Не указан")
+        
+        # Вот эти две строки должны стоять ровно под "if" и "else"
+        csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+        st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
 else:
     st.stop()
