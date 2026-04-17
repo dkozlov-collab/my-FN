@@ -52,11 +52,10 @@ if is_auth:
 
     df_raw = load_data()
 
-    # --- 4. СКРЫТЫЙ ФИЛЬТР ОРГАНИЗАЦИИ ---
+    # Скрытый фильтр (чтобы данные других компаний даже не грузились в память партнера)
     if not df_raw.empty and user_filter != "Все":
         mask = df_raw.astype(str).apply(lambda x: x.str.contains(user_filter, case=False, na=False)).any(axis=1)
         df_raw = df_raw[mask]
-
     # --- 5. БОКОВАЯ ПАНЕЛЬ ---
     with st.sidebar:
         st.markdown("<h2 style='color:#0052FF'>LIFE PAY</h2>", unsafe_allow_html=True)
@@ -64,11 +63,20 @@ if is_auth:
         st.divider()
         
         if not df_raw.empty:
+            # Получаем уникальный список организаций из УЖЕ отфильтрованной таблицы
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            
+            # --- ВОТ ТУТ РУЧНАЯ ПРАВКА ДОСТУПА ---
+            if user_filter != "Все":
+                # Для партнера убираем "+ ['Все']", оставляем только его компанию
+                sel_org = st.selectbox("🏢 Организация:", org_list)
+            else:
+                # Для тебя (Админа) оставляем возможность видеть всех
+                sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            
+            # Фильтр города (тут "Все" можно оставить для всех)
             city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
             sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
-
     # --- 6. ПОДГОТОВКА СПИСКА ---
     df_f = df_raw.iloc[::-1].copy()
     if not df_raw.empty:
