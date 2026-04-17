@@ -1,13 +1,12 @@
-import streamlit as st  # Исправлено mport -> import
+mport streamlit as st
 import pandas as pd
-from auth_logic import login_system  # Убрана решетка #
+from auth_logic import login_system  # Твой замок
+
 # 1. ЗАПУСКАЕМ ПРОВЕРКУ
 is_auth, user_login, user_filter = login_system()
 
 # 2. ВСЁ ЧТО НИЖЕ — ПОД ЗАМКОМ
 if is_auth:
-    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP") # Оставить только тут
-    # ... дальше ваш код с отступом
     # ТУТ СТАВЬ СВОЙ СТАРЫЙ КОД (st.set_page_config и т.д.)
     # ВАЖНО: Весь твой код должен иметь отступ (4 пробела слева)
     st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
@@ -20,7 +19,7 @@ if is_auth:
 
     # Дальше идет твой код загрузки данных (тоже с отступом!)
     # --- 1. СТИЛЬ МИНИМАЛИЗМА LIFE PAY ---
-    st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
+            st.set_page_config(layout="wide", page_title="LIFE PAY | ERP", page_icon="🔵")
     st.markdown("""
     <style>
         .stApp { background-color: #F8FAFC; }
@@ -102,7 +101,8 @@ if is_auth:
             ttn_val = str(row.iloc[13])   # K (Ссылка/Трек)
             content = str(row.iloc[7])   # H (Компоненты)
             move_val = str(row.iloc[14])  # O (Номер перемещения)
-# Заголовок компактной строки
+            
+            # Заголовок компактной строки
             link_icon = "🔗" if "http" in ttn_val else "📦"
             header = f"{date_val} | {org_val} ({city_val}) {link_icon}"
             
