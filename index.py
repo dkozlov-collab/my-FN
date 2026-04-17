@@ -64,9 +64,7 @@ if is_auth:
         st.divider()
         
        if not df_raw.empty:
-            # 1. Получаем список организаций (он уже отфильтрован в шаге 4)
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
-            
             # 2. ВОТ ТВОЙ БАРЬЕР (ВСТАВЬ ЭТО ВМЕСТО СТАРОЙ СТРОКИ SEL_ORG):
             if user_filter != "All" and user_filter != "Все":
                 # Если зашел партнер (БР, АТМ и т.д.) - пункт "Все" НЕ ДОБАВЛЯЕМ
