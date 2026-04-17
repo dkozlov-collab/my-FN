@@ -130,9 +130,17 @@ if is_auth:
                     else:
                         st.write("Не указан")
 
-            # ВЫХОДИМ ИЗ ВСЕХ КОЛОНОК И ЦИКЛОВ (прижимаем к левому краю)
-            csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 Excel", csv_data, f"ship_{idx}.csv", "text/csv", key=f"dl_{idx}")
+            st.write("") # Небольшой отступ
+                    csv_data = pd.DataFrame([row]).to_csv(index=False).encode('utf-8-sig')
+                    st.download_button(
+                        label="📥 Скачать Excel",
+                        data=csv_data,
+                        file_name=f"ship_{idx}.csv",
+                        mime="text/csv",
+                        key=f"dl_{idx}",
+                        use_container_width=True # Растянет кнопку на всю ширину колонки
+                    )
 
+# Проверь, чтобы ниже НЕ БЫЛО лишних else: и лишних кнопок!
 else:
     st.stop()
