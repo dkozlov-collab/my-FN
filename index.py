@@ -63,17 +63,19 @@ if is_auth:
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
         
-    if not df_raw.empty:
+    f not df_raw.empty:
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
-            # ОГРАНИЧЕНИЕ:
-            if user_filter != "Все":
-                # Если зашел партнер, он видит только свою компанию
+            # 1. Блок Организации
+    if user_filter != "Все":
                 user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
                 sel_org = st.selectbox("🏢 Организация:", user_orgs)
-            else:
-                # Если зашел Админ (ты), видишь всё
+          else:
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            
+            # 2. ВОТ ЭТА СТРОКА ДОЛЖНА БЫТЬ ТУТ! (Проверь её наличие)
+            city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
+            sel_city = st.selectbox("📍 Город", ["Все"] + city_list) # Ты создаешь sel_city здесь
           
     # --- 6. ПОДГОТОВКА СПИСКА ---
     df_f = df_raw.iloc[::-1].copy()
