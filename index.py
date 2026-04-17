@@ -70,7 +70,7 @@ if is_auth:
     if user_filter != "Все":
                 user_orgs = [org for org in org_list if user_filter.lower() in org.lower()]
                 sel_org = st.selectbox("🏢 Организация:", user_orgs)
-          else:
+    else:
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
             
             # 2. ВОТ ЭТА СТРОКА ДОЛЖНА БЫТЬ ТУТ! (Проверь её наличие)
