@@ -106,13 +106,23 @@ if is_auth:
                     st.markdown(f"<div class='sn-block'>{content}</div>", unsafe_allow_html=True)
                 
                 with col2:
+                    # Номер перемещения (уже есть)
                     st.markdown("<span class='info-label'>📄 Номер перемещения (O):</span>", unsafe_allow_html=True)
                     st.markdown(f"<div class='move-number'>{move_val}</div>", unsafe_allow_html=True)
-                    st.markdown("<span class='info-label'>📝 ЭДО Подпись:</span>", unsafe_allow_html=True)
-                color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
-                st.markdown(f"<div style='color: {color}; font-size: 1.1rem; font-weight: bold;'>{edo_val}</div>", unsafe_allow_html=True)
-                st.divider()
-                st.markdown("<span class='info-label'>🚚 Трек-номер (N):</span>", unsafe_allow_html=True)
+                    
+                    st.divider() # Разделитель для красоты
+
+                    # --- ВОТ ЭТОТ БЛОК НУЖНО ПОМЕНЯТЬ ---
+                    # Логика цвета
+                    color = "#28a745" if "Подписано" in edo_val else "#ff4b4b" if "Направлено" in edo_val else "#31333F"
+                    
+                    # Выводим заголовок И статус вместе одним блоком
+                    st.markdown(f"""
+                        <div style="text-align: left;">
+                            <span class='info-label'>📝 ЭДО ПОДПИСЬ (P):</span><br>
+                            <span style='color: {color}; font-weight: bold; font-size: 1.1rem;'>{edo_val}</span>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
                 if "http" in ttn_val:
                         st.markdown(f'<a href="{ttn_val}" target="_blank" class="ttn-link-btn">ОТСЛЕДИТЬ ПУТЬ</a>', unsafe_allow_html=True)
