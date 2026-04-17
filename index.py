@@ -63,17 +63,20 @@ if is_auth:
         st.write(f"👤 Пользователь: {user_login}")
         st.divider()
         
-    if not df_raw.empty:
+   if not df_raw.empty:
+            # Создаем список организаций
             org_list = sorted([str(x) for x in df_raw.iloc[:, 2].unique() if str(x).strip()])
             
-            if user_filter != "Все":
-                # Барьер для партнера
-                sel_org = st.selectbox("🏢 Организация:", org_list) 
-            else:
-                # Доступ для админа
+            # ЖЕСТКИЙ БАРЬЕР
+            if user_filter == "Все":
                 sel_org = st.selectbox("🏢 Организация:", ["Все"] + org_list)
+            else:
+                # Если зашел партнер (БР, АТМ), у него ВООБЩЕ не будет выбора
+                # Мы просто фиксируем его организацию без выпадающего списка
+                sel_org = org_list[0] if org_list else "Неизвестно"
+                st.info(f"🏢 Организация: {sel_org}") # Вместо списка просто пишем текст
 
-            # 3. Город (тут можно оставить как есть)
+            # Город
             city_list = sorted([str(x) for x in df_raw.iloc[:, 1].unique() if str(x).strip()])
             sel_city = st.selectbox("📍 Город", ["Все"] + city_list)
 
